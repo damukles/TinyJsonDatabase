@@ -3,25 +3,23 @@ using TinyBlockStorage.Core;
 
 namespace TinyBlockStorage.Blob
 {
-    public class StringIntSerializer : ISerializer<Tuple<string, int>>
+    public class StringSerializer : ISerializer<string>
     {
-        public byte[] Serialize(Tuple<string, int> value)
+        public byte[] Serialize(string value)
         {
-            var stringBytes = System.Text.Encoding.UTF8.GetBytes(value.Item1);
+            var stringBytes = System.Text.Encoding.UTF8.GetBytes(value);
 
             var data = new byte[
                 4 +                    // First 4 bytes indicate length of the string
-                stringBytes.Length +   // another X bytes of actual string content
-                4                      // Ends with 4 bytes int value
+                stringBytes.Length     // another X bytes of actual string content
             ];
 
             BufferHelper.WriteBuffer((int)stringBytes.Length, data, 0);
             Buffer.BlockCopy(src: stringBytes, srcOffset: 0, dst: data, dstOffset: 4, count: stringBytes.Length);
-            BufferHelper.WriteBuffer((int)value.Item2, data, 4 + stringBytes.Length);
             return data;
         }
 
-        public Tuple<string, int> Deserialize(byte[] buffer, int offset, int length)
+        public string Deserialize(byte[] buffer, int offset, int length)
         {
             var stringLength = BufferHelper.ReadBufferInt32(buffer, offset);
             if (stringLength < 0 || stringLength > (16 * 1024))
@@ -29,8 +27,7 @@ namespace TinyBlockStorage.Blob
                 throw new Exception("Invalid string length: " + stringLength);
             }
             var stringValue = System.Text.Encoding.UTF8.GetString(buffer, offset + 4, stringLength);
-            var integerValue = BufferHelper.ReadBufferInt32(buffer, offset + 4 + stringLength);
-            return new Tuple<string, int>(stringValue, integerValue);
+            return stringValue;
         }
 
         public bool IsFixedSize

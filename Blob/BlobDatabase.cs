@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
 using TinyBlockStorage.Core;
 
 namespace TinyBlockStorage.Blob
@@ -13,9 +11,7 @@ namespace TinyBlockStorage.Blob
     {
         readonly Stream mainDatabaseFile;
         readonly Stream primaryIndexFile;
-        readonly Stream secondaryIndexFile;
-        readonly Tree<Guid, uint> primaryIndex;
-        readonly Tree<Tuple<string, int>, uint> secondaryIndex;
+        readonly Tree<string, uint> primaryIndex;
         readonly RecordStorage blobRecords;
         readonly BlobSerializer blobSerializer = new BlobSerializer();
 
@@ -30,28 +26,18 @@ namespace TinyBlockStorage.Blob
             // As soon as BlobDatabase is constructed, open the steam to talk to the underlying files
             this.mainDatabaseFile = new FileStream(pathToBlobDb, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             this.primaryIndexFile = new FileStream(pathToBlobDb + ".pidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
-            this.secondaryIndexFile = new FileStream(pathToBlobDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
 
             // Construct the RecordStorage that use to store main blob data
             this.blobRecords = new RecordStorage(new BlockStorage(this.mainDatabaseFile, 4096, 48));
 
             // Construct the primary and secondary indexes 
-            this.primaryIndex = new Tree<Guid, uint>(
-                new TreeDiskNodeManager<Guid, uint>(
-                    new GuidSerializer(),
+            this.primaryIndex = new Tree<string, uint>(
+                new TreeDiskNodeManager<string, uint>(
+                    new StringSerializer(),
                     new TreeUIntSerializer(),
                     new RecordStorage(new BlockStorage(this.primaryIndexFile, 4096))
                 ),
                 false
-            );
-
-            this.secondaryIndex = new Tree<Tuple<string, int>, uint>(
-                new TreeDiskNodeManager<Tuple<string, int>, uint>(
-                    new StringIntSerializer(),
-                    new TreeUIntSerializer(),
-                    new RecordStorage(new BlockStorage(this.secondaryIndexFile, 4096))
-                ),
-                true
             );
         }
 
@@ -78,20 +64,22 @@ namespace TinyBlockStorage.Blob
                 throw new ObjectDisposedException("BlobDatabase");
             }
 
+            // Do not add same Blob twice
+            var entry = this.primaryIndex.Get(blob.Id);
+            if (entry != null)
+                return;
+
             // Serialize the blob and insert it
             var recordId = this.blobRecords.Create(this.blobSerializer.Serialize(blob));
 
             // Primary index
             this.primaryIndex.Insert(blob.Id, recordId);
-
-            // Secondary index
-            this.secondaryIndex.Insert(new Tuple<string, int>(blob.FileName, blob.LastEditedUnixTimeSeconds), recordId);
         }
 
         /// <summary>
         /// Find a blob by its unique id
         /// </summary>
-        public BlobModel Find(Guid blobId)
+        public BlobModel Find(string blobId)
         {
             if (disposed)
             {
@@ -106,28 +94,6 @@ namespace TinyBlockStorage.Blob
             }
 
             return this.blobSerializer.Deserializer(this.blobRecords.Find(entry.Item2));
-        }
-
-        /// <summary>
-        /// Find all blobs that beints to given fileName and lastEditedUnixTime
-        /// </summary>
-        public IEnumerable<BlobModel> FindBy(string fileName, int lastEditedUnixTime)
-        {
-            var comparer = Comparer<Tuple<string, int>>.Default;
-            var searchKey = new Tuple<string, int>(fileName, lastEditedUnixTime);
-
-            // Use the secondary index to find this blob
-            foreach (var entry in this.secondaryIndex.LargerThanOrEqualTo(searchKey))
-            {
-                // As soon as we reached larger key than the key given by client, stop
-                if (comparer.Compare(entry.Item1, searchKey) > 0)
-                {
-                    break;
-                }
-
-                // Still in range, yield return
-                yield return this.blobSerializer.Deserializer(this.blobRecords.Find(entry.Item2));
-            }
         }
 
         /// <summary>
@@ -152,7 +118,6 @@ namespace TinyBlockStorage.Blob
             if (disposing && !disposed)
             {
                 this.mainDatabaseFile.Dispose();
-                this.secondaryIndexFile.Dispose();
                 this.primaryIndexFile.Dispose();
                 this.disposed = true;
             }

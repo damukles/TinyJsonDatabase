@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography;
 
 namespace TinyBlockStorage.Blob
 {
@@ -7,33 +8,29 @@ namespace TinyBlockStorage.Blob
     /// </summary>
     public class BlobModel
     {
-        public Guid Id
+        public BlobModel(byte[] blockData)
         {
-            get;
-            set;
+            BlockData = blockData;
+
+            using (var sha256 = new SHA256CryptoServiceProvider())
+            {
+                Id = Convert.ToBase64String(sha256.ComputeHash(blockData));
+            }
         }
 
-        public string FileName
+        public string Id
         {
             get;
-            set;
-        }
-
-        public int LastEditedUnixTimeSeconds
-        {
-            get;
-            set;
         }
 
         public byte[] BlockData
         {
             get;
-            set;
         }
 
         public override string ToString()
         {
-            return string.Format("[BlobModel: Id={0}, FileName={1}, LastEdited={2}, BlockData={3}]", Id, FileName, LastEditedUnixTimeSeconds, BlockData.Length + " bytes");
+            return string.Format("[BlobModel: Id={0}, BlockData={1}]", Id, BlockData.Length + " bytes");
         }
     }
 }
