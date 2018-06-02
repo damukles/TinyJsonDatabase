@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Loader;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -12,6 +9,7 @@ using Serilog.Events;
 using BridgeDaemon.Options;
 using System.Threading;
 using TinyBlockStorage.Blob;
+using System.Linq;
 
 namespace BridgeDaemon
 {
@@ -32,6 +30,7 @@ namespace BridgeDaemon
                 .Select(i => 2000 + i)
                 .ToList()
                 .ForEach(c => Eternity.AddJob<MqttMsgClient>(c));
+            // Eternity.AddJob<MqttMsgClient>(2001);
 
             Eternity.Start(options.MonitorEverySeconds);
 
@@ -74,6 +73,7 @@ namespace BridgeDaemon
                 .CreateLogger();
 
             return new ServiceCollection()
+                .AddOptions()
                 .Configure<DaemonOptions>(options =>
                 {
                     options.GatewayId = int.Parse(config.GetSection("DaemonOptions:GatewayId").Value);

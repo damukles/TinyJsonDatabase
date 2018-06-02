@@ -25,21 +25,25 @@ server.on('clientConnected', function (client) {
 
     sendingHello = true;
 
+    var index = 0;
+
     setTimeout(function () {
         setInterval(function () {
             if (!sendingHello) return;
 
             var message = {
                 topic: '/loadtest/' + client.id,
-                payload: new Date().toISOString() + ': Hello ' + client.id, // or a Buffer
+                payload: 'Hello ' + client.id + index, // or a Buffer
                 qos: 0, // 0, 1, or 2
                 retain: false // or true
             };
 
+            index++;
+
             server.publish(message, function () {
                 // console.log('Broker sent a warm hello to ' + client.id)
             });
-        }, 1000);
+        }, 5);
     }, 1000);
 
 });

@@ -2,11 +2,8 @@ using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 using System;
 using System.Net;
-using System.Text;
 using System.Threading;
 using Serilog;
-using System.Linq;
-using Newtonsoft.Json;
 using TinyBlockStorage.Blob;
 
 namespace BridgeDaemon
@@ -26,8 +23,6 @@ namespace BridgeDaemon
             _clientId = Guid.NewGuid().ToString();
             _exitEvent = new ManualResetEventSlim();
         }
-
-        // UPDATE last online is not implemented
 
         public void Start(object param)
         {
@@ -73,14 +68,14 @@ namespace BridgeDaemon
 
             _db.Insert(new BlobModel(e.Message));
 
-            Log.Information("Record for client {clientId} has been added to the database.", _clientId);
+            // Log.Information("Record for client {clientId} has been added to the database.", _clientId);
         }
 
         private void MqttConnectionClosed(object sender, EventArgs e)
         {
             Log.Warning("MQTT client connection was closed.");
             _exitEvent.Set();
-            _db.Dispose();
+            // _db.Dispose(); //This should not be forced, so the records can still be written.
         }
     }
 }

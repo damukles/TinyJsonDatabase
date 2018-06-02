@@ -66,13 +66,13 @@ namespace TinyBlockStorage.Blob
                 throw new ObjectDisposedException("BlobDatabase");
             }
 
-            // Do not add same Blob twice
-            var entry = this.primaryIndex.Get(blob.Id);
-            if (entry != null)
-                return;
-
             lock (SyncRoot)
             {
+                // Do not add same Blob twice
+                var entry = this.primaryIndex.Get(blob.Id);
+                if (entry != null)
+                    return;
+
                 // Serialize the blob and insert it
                 var recordId = this.blobRecords.Create(this.blobSerializer.Serialize(blob));
 
