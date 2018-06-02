@@ -49,7 +49,7 @@ namespace TinyBlockStorage.Core
         // Constructors
         //
 
-        public BlockStorage(Stream storage, int blockSize = 4096, int blockHeaderSize = 48)
+        public BlockStorage(Stream storage, int blockSize = 40960, int blockHeaderSize = 48)
         {
             if (storage == null)
                 throw new ArgumentNullException("storage");
