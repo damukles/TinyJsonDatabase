@@ -32,7 +32,7 @@ namespace TestApp
 
                 using (var db = new FileDatabase(dbPath))
                 {
-                    var entries = db.FindBy(fileName, fileLastEdited);
+                    var entries = db.FindBy(fileName);
 
                     if (entries == null || !entries.Any())
                     {
@@ -45,22 +45,23 @@ namespace TestApp
                     }
                 }
             }
-
-            using (var db = new FileDatabase(dbPath))
+            else
             {
-                var data = db.Find(Guid.Parse("1f90ea04-ed60-425e-810f-594f2cd6801b"))?.BlockData;
+                using (var db = new FileDatabase(dbPath))
+                {
+                    var data = db.Find(Guid.Parse("d86835fe-3ea5-4e09-bbf4-bb2ec9c04194"))?.BlockData;
 
-                if (data == null)
-                {
-                    Console.WriteLine("Cloud not find data by GUID.");
-                }
-                else
-                {
-                    File.WriteAllBytes("out.jpg", data);
-                    Console.WriteLine("Data written to out.jpg");
+                    if (data == null)
+                    {
+                        Console.WriteLine("Cloud not find data by GUID.");
+                    }
+                    else
+                    {
+                        File.WriteAllBytes("out.jpg", data);
+                        Console.WriteLine("Data written to out.jpg");
+                    }
                 }
             }
-
         }
     }
 }

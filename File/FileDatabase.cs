@@ -15,7 +15,7 @@ namespace TinyBlockStorage.File
         readonly Stream primaryIndexFile;
         readonly Stream secondaryIndexFile;
         readonly Tree<Guid, uint> primaryIndex;
-        readonly Tree<Tuple<string, int>, uint> secondaryIndex;
+        readonly Tree<string, uint> secondaryIndex;
         readonly RecordStorage blobRecords;
         readonly FileSerializer blobSerializer = new FileSerializer();
 
@@ -45,9 +45,9 @@ namespace TinyBlockStorage.File
                 false
             );
 
-            this.secondaryIndex = new Tree<Tuple<string, int>, uint>(
-                new TreeDiskNodeManager<Tuple<string, int>, uint>(
-                    new StringIntSerializer(),
+            this.secondaryIndex = new Tree<string, uint>(
+                new TreeDiskNodeManager<string, uint>(
+                    new StringSerializer(),
                     new TreeUIntSerializer(),
                     new RecordStorage(new BlockStorage(this.secondaryIndexFile, 4096))
                 ),
@@ -85,7 +85,7 @@ namespace TinyBlockStorage.File
             this.primaryIndex.Insert(blob.Id, recordId);
 
             // Secondary index
-            this.secondaryIndex.Insert(new Tuple<string, int>(blob.FileName, blob.LastEditedUnixTimeSeconds), recordId);
+            this.secondaryIndex.Insert(blob.FileName, recordId);
         }
 
         /// <summary>
@@ -109,18 +109,17 @@ namespace TinyBlockStorage.File
         }
 
         /// <summary>
-        /// Find all blobs that beints to given fileName and lastEditedUnixTime
+        /// Find all blobs that beints to given fileName
         /// </summary>
-        public IEnumerable<FileModel> FindBy(string fileName, int lastEditedUnixTime)
+        public IEnumerable<FileModel> FindBy(string fileName)
         {
-            var comparer = Comparer<Tuple<string, int>>.Default;
-            var searchKey = new Tuple<string, int>(fileName, lastEditedUnixTime);
+            var comparer = Comparer<string>.Default;
 
             // Use the secondary index to find this blob
-            foreach (var entry in this.secondaryIndex.LargerThanOrEqualTo(searchKey))
+            foreach (var entry in this.secondaryIndex.LargerThanOrEqualTo(fileName))
             {
                 // As soon as we reached larger key than the key given by client, stop
-                if (comparer.Compare(entry.Item1, searchKey) > 0)
+                if (comparer.Compare(entry.Item1, fileName) > 0)
                 {
                     break;
                 }
