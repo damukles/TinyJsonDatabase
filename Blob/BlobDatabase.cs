@@ -15,6 +15,8 @@ namespace TinyBlockStorage.Blob
         readonly RecordStorage blobRecords;
         readonly BlobSerializer blobSerializer = new BlobSerializer();
 
+        private object SyncRoot = new Object();
+
         /// <summary>
         /// </summary>
         /// <param name="pathToBlobDb">Path to blob db.</param>
@@ -69,11 +71,14 @@ namespace TinyBlockStorage.Blob
             if (entry != null)
                 return;
 
-            // Serialize the blob and insert it
-            var recordId = this.blobRecords.Create(this.blobSerializer.Serialize(blob));
+            lock (SyncRoot)
+            {
+                // Serialize the blob and insert it
+                var recordId = this.blobRecords.Create(this.blobSerializer.Serialize(blob));
 
-            // Primary index
-            this.primaryIndex.Insert(blob.Id, recordId);
+                // Primary index
+                this.primaryIndex.Insert(blob.Id, recordId);
+            }
         }
 
         /// <summary>
