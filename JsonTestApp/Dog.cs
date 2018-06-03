@@ -3,9 +3,8 @@ using TinyBlockStorage.Json;
 
 namespace TestApp
 {
-    public class Dog : IJsonDocument
+    public class Dog : JsonDocument
     {
-        public string Name { get; set; }
         public int Age { get; set; }
         public bool Barks { get; set; }
     }

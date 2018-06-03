@@ -20,38 +20,39 @@ namespace TestApp
                 // dummy object
                 var dog = new Dog()
                 {
-                    Name = "Bello",
+                    Name = "bello",
                     Age = 8,
                     Barks = false
                 };
 
-                // InsertDogs(db, 1000, dog);
+                InsertDogs(db, 100_000, dog);
 
                 // First calls are very slow
                 InitJsonConvert(dog);
 
                 var stopWatch = Stopwatch.StartNew();
 
-                var dbDog = db.Find(Guid.Parse("b82e8e8e-08af-40d9-a05e-72031c864532"));
-                var init = stopWatch.ElapsedMilliseconds;
+                // var dbDog = db.Find(Guid.Parse("b82e8e8e-08af-40d9-a05e-72031c864532"));
+                // var init = stopWatch.ElapsedMilliseconds;
 
-                var dogs = db.FindAll(x => x.ToString().StartsWith("b82e")).ToList();
+                // ---- lISTE DURCHITERIEREN GEHT ZU LANGE; BRAUCHE COMPARABLE ID (oder sonst einFeld) (String? uint?) ---- //
+                var dogs = db.FindByName("bello").ToList();
                 var partial = stopWatch.ElapsedMilliseconds;
 
-                var dogs2 = db.FindAll(_ => true).ToList();
-                var all = stopWatch.ElapsedMilliseconds;
+                // var dogs2 = db.FindAll(_ => true).ToList();
+                // var all = stopWatch.ElapsedMilliseconds;
 
                 stopWatch.Stop();
 
                 Console.WriteLine("Partial: {0}", dogs.Count);
                 printOut(dogs);
 
-                Console.WriteLine("All: {0}", dogs2.Count);
+                // Console.WriteLine("All: {0}", dogs2.Count);
                 // printOut(dogs2);
 
-                Console.WriteLine("Single Known Time: {0}", init);
-                Console.WriteLine("Partial Time: {0}", partial - init);
-                Console.WriteLine("All Time: {0}", all - partial);
+                // Console.WriteLine("Single Known Time: {0}", init);
+                Console.WriteLine("Partial Time: {0}", partial);
+                // Console.WriteLine("All Time: {0}", all - partial);
             }
         }
 
@@ -66,7 +67,10 @@ namespace TestApp
         {
             Guid id;
             for (var i = 0; i < count; i++)
+            {
+                dog.Name = "bello" + i.ToString();
                 id = db.Insert(dog);
+            }
         }
 
         private static void printOut(IEnumerable<Dog> dogs)

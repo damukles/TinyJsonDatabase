@@ -9,7 +9,7 @@ namespace TinyBlockStorage.Json
     /// This class serializes a JsonModel into byte[] for using with RecordStorage;
     /// It does not matter how you serialize the model, whenever it is XML, JSON, Protobuf or Binary serialization.
     /// </summary>
-    public class JsonSerializer<T> where T : IJsonDocument, new()
+    public class JsonSerializer<T> where T : JsonDocument, new()
     {
         public (byte[], Guid) Serialize(T obj)
         {

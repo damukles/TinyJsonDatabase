@@ -9,14 +9,14 @@ namespace TinyBlockStorage.Json
     /// <summary>
     /// Then, define our database
     /// </summary>
-    public class JsonDatabase<T> : IJsonDatabase<T>, IDisposable where T : IJsonDocument, new()
+    public class JsonDatabase<T> : IJsonDatabase<T>, IDisposable where T : JsonDocument, new()
     {
         readonly Type jsonType;
         readonly Stream mainDatabaseFile;
         readonly Stream primaryIndexFile;
-        // readonly Stream secondaryIndexJson;
+        readonly Stream secondaryIndexJson;
         readonly Tree<Guid, uint> primaryIndex;
-        // readonly Tree<string, uint> secondaryIndex;
+        readonly Tree<string, uint> secondaryIndex;
         readonly RecordStorage jsonRecords;
         readonly JsonSerializer<T> jsonSerializer = new JsonSerializer<T>();
 
@@ -33,7 +33,7 @@ namespace TinyBlockStorage.Json
             // As soon as JsonDatabase is constructed, open the steam to talk to the underlying Jsons
             this.mainDatabaseFile = new FileStream(pathToJsonDb, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             this.primaryIndexFile = new FileStream(pathToJsonDb + ".pidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
-            // this.secondaryIndexJson = new FileStream(pathToJsonDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
+            this.secondaryIndexJson = new FileStream(pathToJsonDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
 
             // Construct the RecordStorage that use to store main json data
             this.jsonRecords = new RecordStorage(new BlockStorage(this.mainDatabaseFile, 4096, 48));
@@ -48,14 +48,14 @@ namespace TinyBlockStorage.Json
                 false
             );
 
-            // this.secondaryIndex = new Tree<string, uint>(
-            //     new TreeDiskNodeManager<string, uint>(
-            //         new StringSerializer(),
-            //         new TreeUIntSerializer(),
-            //         new RecordStorage(new BlockStorage(this.secondaryIndexJson, 4096))
-            //     ),
-            //     true
-            // );
+            this.secondaryIndex = new Tree<string, uint>(
+                new TreeDiskNodeManager<string, uint>(
+                    new StringSerializer(),
+                    new TreeUIntSerializer(),
+                    new RecordStorage(new BlockStorage(this.secondaryIndexJson, 4096))
+                ),
+                true
+            );
         }
 
         /// <summary>
@@ -89,32 +89,9 @@ namespace TinyBlockStorage.Json
             this.primaryIndex.Insert(id, recordId);
 
             // Secondary index
-            // this.secondaryIndex.Insert(json.JsonName, recordId);
+            this.secondaryIndex.Insert(json.Name, recordId);
 
             return id;
-        }
-
-        /// <summary>
-        /// Find all json
-        /// </summary>
-        public IEnumerable<T> FindAll(Func<Guid, bool> func)
-        {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("JsonDatabase");
-            }
-
-            var index = this.primaryIndex
-                .All();
-
-            var list = new List<T>();
-            foreach (var i in index)
-            {
-                if (func(i.Item1))
-                {
-                    yield return this.jsonSerializer.Deserializer(this.jsonRecords.Find(i.Item2));
-                }
-            }
         }
 
         /// <summary>
@@ -140,23 +117,23 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// Find all jsons that beints to given JsonName
         /// </summary>
-        // public IEnumerable<T> FindBy(string JsonName)
-        // {
-        //     var comparer = Comparer<string>.Default;
+        public IEnumerable<T> FindByName(string name)
+        {
+            var comparer = Comparer<string>.Default;
 
-        //     // Use the secondary index to find this json
-        //     foreach (var entry in this.secondaryIndex.LargerThanOrEqualTo(JsonName))
-        //     {
-        //         // As soon as we reached larger key than the key given by client, stop
-        //         if (comparer.Compare(entry.Item1, JsonName) > 0)
-        //         {
-        //             break;
-        //         }
+            // Use the secondary index to find this json
+            foreach (var entry in this.secondaryIndex.LargerThanOrEqualTo(name))
+            {
+                // As soon as we reached larger key than the key given by client, stop
+                if (comparer.Compare(entry.Item1, name) > 0)
+                {
+                    break;
+                }
 
-        //         // Still in range, yield return
-        //         yield return this.jsonSerializer.Deserializer(this.jsonRecords.Find(entry.Item2));
-        //     }
-        // }
+                // Still in range, yield return
+                yield return this.jsonSerializer.Deserializer(this.jsonRecords.Find(entry.Item2));
+            }
+        }
 
         /// <summary>
         /// Delete specified json from our database
@@ -180,7 +157,7 @@ namespace TinyBlockStorage.Json
             if (disposing && !disposed)
             {
                 this.mainDatabaseFile.Dispose();
-                // this.secondaryIndexJson.Dispose();
+                this.secondaryIndexJson.Dispose();
                 this.primaryIndexFile.Dispose();
                 this.disposed = true;
             }
