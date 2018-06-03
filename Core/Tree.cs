@@ -156,6 +156,11 @@ namespace TinyBlockStorage.Core
             return node.GetEntry(insertionIndex);
         }
 
+        public IEnumerable<Tuple<K, V>> All()
+        {
+            return new TreeTraverser<K, V>(nodeManager, nodeManager.RootNode, 0, TreeTraverseDirection.Ascending);
+        }
+
         /// <summary>
         /// Search for all elements that larger than or equal to given key
         /// </summary>
