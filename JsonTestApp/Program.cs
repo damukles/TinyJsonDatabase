@@ -25,34 +25,35 @@ namespace TestApp
                     Barks = false
                 };
 
-                InsertDogs(db, 100_000, dog);
+                // InsertDogs(db, 100_000, dog);
 
                 // First calls are very slow
                 InitJsonConvert(dog);
 
                 var stopWatch = Stopwatch.StartNew();
 
-                // var dbDog = db.Find(Guid.Parse("b82e8e8e-08af-40d9-a05e-72031c864532"));
-                // var init = stopWatch.ElapsedMilliseconds;
+                var dog2 = db.Find(Guid.Parse("8205585d-481d-4221-b995-230119a97337"));
+                var findTime = stopWatch.ElapsedMilliseconds;
 
-                // ---- lISTE DURCHITERIEREN GEHT ZU LANGE; BRAUCHE COMPARABLE ID (oder sonst einFeld) (String? uint?) ---- //
-                var dogs = db.FindByName("bello").ToList();
-                var partial = stopWatch.ElapsedMilliseconds;
+                // Get onyl full matches
+                var dogs = db.FindByName("bello734").ToList();
+                var findFullMatchesTime = stopWatch.ElapsedMilliseconds;
 
-                // var dogs2 = db.FindAll(_ => true).ToList();
-                // var all = stopWatch.ElapsedMilliseconds;
+                // Get all that start with string
+                var dogs2 = db.FindByName("bello234", false).ToList();
+                var findStartWithMatchesTime = stopWatch.ElapsedMilliseconds;
 
                 stopWatch.Stop();
 
-                Console.WriteLine("Partial: {0}", dogs.Count);
+                Console.WriteLine("Full Matches: {0}", dogs.Count);
                 printOut(dogs);
 
-                // Console.WriteLine("All: {0}", dogs2.Count);
-                // printOut(dogs2);
+                Console.WriteLine("StartsWith Matches: {0}", dogs2.Count);
+                printOut(dogs2);
 
-                // Console.WriteLine("Single Known Time: {0}", init);
-                Console.WriteLine("Partial Time: {0}", partial);
-                // Console.WriteLine("All Time: {0}", all - partial);
+                Console.WriteLine("Single Known Time: {0}", findTime);
+                Console.WriteLine("Full Matches Time: {0}", findFullMatchesTime - findTime);
+                Console.WriteLine("StartsWith Time: {0}", findStartWithMatchesTime - findFullMatchesTime);
             }
         }
 

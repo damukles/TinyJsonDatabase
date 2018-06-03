@@ -122,7 +122,7 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// Find all jsons that beints to given JsonName
         /// </summary>
-        public IEnumerable<T> FindByName(string name)
+        public IEnumerable<T> FindByName(string name, bool fullMatchesOnly = true)
         {
             var comparer = Comparer<string>.Default;
 
@@ -132,7 +132,17 @@ namespace TinyBlockStorage.Json
                 // As soon as we reached larger key than the key given by client, stop
                 if (comparer.Compare(entry.Item1, name) > 0)
                 {
-                    break;
+                    if (fullMatchesOnly)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        if (!entry.Item1.StartsWith(name))
+                        {
+                            break;
+                        }
+                    }
                 }
 
                 // Still in range, yield return
