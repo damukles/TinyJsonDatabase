@@ -20,6 +20,9 @@ namespace TinyBlockStorage.Json
         readonly RecordStorage jsonRecords;
         readonly JsonSerializer<T> jsonSerializer = new JsonSerializer<T>();
 
+        object SyncRoot = new Object();
+
+
         /// <summary>
         /// </summary>
         /// <param name="pathToJsonDb">Path to json db.</param>
@@ -81,17 +84,19 @@ namespace TinyBlockStorage.Json
                 throw new ObjectDisposedException("JsonDatabase");
             }
 
-            // Serialize the json and insert it
-            var (bytes, id) = this.jsonSerializer.Serialize(json);
-            var recordId = this.jsonRecords.Create(bytes);
+            lock (SyncRoot)
+            {
+                // Serialize the json and insert it
+                var (bytes, id) = this.jsonSerializer.Serialize(json);
+                var recordId = this.jsonRecords.Create(bytes);
 
-            // Primary index
-            this.primaryIndex.Insert(id, recordId);
+                // Primary index
+                this.primaryIndex.Insert(id, recordId);
 
-            // Secondary index
-            this.secondaryIndex.Insert(json.Name, recordId);
-
-            return id;
+                // Secondary index
+                this.secondaryIndex.Insert(json.Name, recordId);
+                return id;
+            }
         }
 
         /// <summary>
