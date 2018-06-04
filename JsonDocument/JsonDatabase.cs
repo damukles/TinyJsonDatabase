@@ -3,6 +3,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using TinyBlockStorage.Core;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace TinyBlockStorage.Json
 {
@@ -11,7 +13,7 @@ namespace TinyBlockStorage.Json
     /// </summary>
     public class JsonDatabase<T> : IJsonDatabase<T>, IDisposable where T : JsonDocument, new()
     {
-        readonly Type jsonType;
+        // readonly Type jsonType;
         readonly Stream mainDatabaseFile;
         readonly Stream primaryIndexFile;
         readonly Stream secondaryIndexFile;
@@ -31,7 +33,27 @@ namespace TinyBlockStorage.Json
             if (pathToJsonDb == null)
                 throw new ArgumentNullException("pathToJsonDb");
 
-            jsonType = typeof(T);
+            // jsonType = typeof(T);
+
+            // var pk = jsonType.GetProperties().Where(p => p.IsDefined(typeof(PrimaryKeyAttribute), false)).SingleOrDefault();
+            // if (pk == default(PropertyInfo))
+            //     throw new InvalidOperationException("No primary key found, apply the PrimaryKeyAttribute.");
+
+            // var treeType = typeof(Tree<,>);
+            // var typeArgs = new Type[] { pk.PropertyType, typeof(uint) };
+            // var indexType = treeType.MakeGenericType(typeArgs);
+
+            // var nodeMgrType = typeof(TreeDiskNodeManager<,>);
+            // // nicht sehr generisch, hä
+            // var nodeMgrInstArgs = new object[] {
+            //     new GuidSerializer(),
+            //     new TreeUIntSerializer(),
+            //     new RecordStorage(new BlockStorage(this.primaryIndexFile, 4096))
+            // };
+            // var nodeMgrInst = Activator.CreateInstance(nodeMgrType, nodeMgrInstArgs);
+
+            // var indexArgs = new object[] { nodeMgrInst, false };
+            // var indexInst = Activator.CreateInstance(indexType, indexArgs);
 
             // As soon as JsonDatabase is constructed, open the steam to talk to the underlying Jsons
             this.mainDatabaseFile = new FileStream(pathToJsonDb, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
