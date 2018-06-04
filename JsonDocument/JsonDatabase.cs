@@ -22,6 +22,8 @@ namespace TinyBlockStorage.Json
         readonly RecordStorage jsonRecordStorage;
         readonly JsonSerializer<T> jsonSerializer = new JsonSerializer<T>();
 
+        private Dictionary<Tuple<string, Type>, object> dbIndices = new Dictionary<Tuple<string, Type>, object>();
+
         object SyncRoot = new Object();
 
 
@@ -33,32 +35,43 @@ namespace TinyBlockStorage.Json
             if (pathToJsonDb == null)
                 throw new ArgumentNullException("pathToJsonDb");
 
-            // jsonType = typeof(T);
-
-            // var pk = jsonType.GetProperties().Where(p => p.IsDefined(typeof(PrimaryKeyAttribute), false)).SingleOrDefault();
-            // if (pk == default(PropertyInfo))
-            //     throw new InvalidOperationException("No primary key found, apply the PrimaryKeyAttribute.");
-
-            // var treeType = typeof(Tree<,>);
-            // var typeArgs = new Type[] { pk.PropertyType, typeof(uint) };
-            // var indexType = treeType.MakeGenericType(typeArgs);
-
-            // var nodeMgrType = typeof(TreeDiskNodeManager<,>);
-            // // nicht sehr generisch, hä
-            // var nodeMgrInstArgs = new object[] {
-            //     new GuidSerializer(),
-            //     new TreeUIntSerializer(),
-            //     new RecordStorage(new BlockStorage(this.primaryIndexFile, 4096))
-            // };
-            // var nodeMgrInst = Activator.CreateInstance(nodeMgrType, nodeMgrInstArgs);
-
-            // var indexArgs = new object[] { nodeMgrInst, false };
-            // var indexInst = Activator.CreateInstance(indexType, indexArgs);
 
             // As soon as JsonDatabase is constructed, open the steam to talk to the underlying Jsons
             this.mainDatabaseFile = new FileStream(pathToJsonDb, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             this.primaryIndexFile = new FileStream(pathToJsonDb + ".pidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             this.secondaryIndexFile = new FileStream(pathToJsonDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
+
+            // ---- BEING Dynamically create an Index and store with type ---- //
+            var jsonType = typeof(T);
+
+            var pk = jsonType.GetProperties().Where(p => p.IsDefined(typeof(PrimaryKeyAttribute), false)).SingleOrDefault();
+            if (pk == default(PropertyInfo))
+                throw new InvalidOperationException("No primary key found, apply the PrimaryKeyAttribute.");
+
+            var typeArgs = new Type[] { pk.PropertyType, typeof(uint) };
+
+            var nodeMgrType = typeof(TreeDiskNodeManager<,>).MakeGenericType(typeArgs);
+            // nicht sehr generisch, hä
+            var nodeMgrInstArgs = new object[] {
+                new GuidSerializer(),
+                new TreeUIntSerializer(),
+                new RecordStorage(new BlockStorage(this.primaryIndexFile, 4096))
+            };
+            var nodeMgrInst = Activator.CreateInstance(nodeMgrType, nodeMgrInstArgs);
+
+            var treeType = typeof(Tree<,>);
+            var indexType = treeType.MakeGenericType(typeArgs);
+
+            var indexArgs = new object[] { nodeMgrInst, false };
+            var indexInst = Activator.CreateInstance(indexType, indexArgs);
+
+            dbIndices.Add(new Tuple<string, Type>(pk.Name, pk.PropertyType), indexInst);
+
+            var instAgainAnon = dbIndices[new Tuple<string, Type>(pk.Name, pk.PropertyType)];
+            // var instAgain = Convert.ChangeType(instAgainAnon, indexType);
+            // STILL AN OBJECT HEREEE, above line is not necessary
+            // ---- END Dynamically create an Index and store with type ---- //
+
 
             // Construct the RecordStorage that use to store main json data
             this.jsonRecordStorage = new RecordStorage(new BlockStorage(this.mainDatabaseFile, 4096, 48));
