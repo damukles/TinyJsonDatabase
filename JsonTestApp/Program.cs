@@ -15,46 +15,49 @@ namespace TestApp
             var dbPath = "data.db";
 
 
-            using (var db = new JsonDatabase<Dog>(dbPath))
+            // dummy object
+            var dog = new Dog()
             {
-                // dummy object
-                var dog = new Dog()
-                {
-                    Name = "bello",
-                    Age = 8,
-                    Barks = false
-                };
+                Name = "bello",
+                Age = 8,
+                Barks = false
+            };
 
-                // InsertDogs(db, 100_000, dog);
+            // InsertDogs(db, 100_000, dog);
 
-                // First calls are very slow
-                InitJsonConvert(dog);
+            // First calls are very slow
+            InitJsonConvert(dog);
 
-                var stopWatch = Stopwatch.StartNew();
+            var stopWatch = Stopwatch.StartNew();
 
-                var dog2 = db.Find(Guid.Parse("8205585d-481d-4221-b995-230119a97337"));
-                var findTime = stopWatch.ElapsedMilliseconds;
+            var db = new JsonDatabase<Dog>(dbPath);
+            // db.Preload();
 
-                // Get onyl full matches
-                var dogs = db.FindByName("bello734").ToList();
-                var findFullMatchesTime = stopWatch.ElapsedMilliseconds;
+            var initTime = stopWatch.ElapsedMilliseconds;
 
-                // Get all that start with string
-                var dogs2 = db.FindByName("bello234", false).ToList();
-                var findStartWithMatchesTime = stopWatch.ElapsedMilliseconds;
+            var dog2 = db.Find(Guid.Parse("8205585d-481d-4221-b995-230119a97337"));
+            var findTime = stopWatch.ElapsedMilliseconds;
 
-                stopWatch.Stop();
+            // Get onyl full matches
+            var dogs = db.FindByName("bello734").ToList();
+            var findFullMatchesTime = stopWatch.ElapsedMilliseconds;
 
-                Console.WriteLine("Full Matches: {0}", dogs.Count);
-                printOut(dogs);
+            // Get all that start with string
+            var dogs2 = db.FindByName("bello234", false).ToList();
+            var findStartWithMatchesTime = stopWatch.ElapsedMilliseconds;
 
-                Console.WriteLine("StartsWith Matches: {0}", dogs2.Count);
-                printOut(dogs2);
+            stopWatch.Stop();
 
-                Console.WriteLine("Single Known Time: {0}", findTime);
-                Console.WriteLine("Full Matches Time: {0}", findFullMatchesTime - findTime);
-                Console.WriteLine("StartsWith Time: {0}", findStartWithMatchesTime - findFullMatchesTime);
-            }
+            Console.WriteLine("Full Matches: {0}", dogs.Count);
+            // printOut(dogs);
+
+            Console.WriteLine("StartsWith Matches: {0}", dogs2.Count);
+            // printOut(dogs2);
+
+            Console.WriteLine("Init Time: {0}", initTime);
+            Console.WriteLine("Single Known Time: {0}", findTime - initTime);
+            Console.WriteLine("Full Matches Time: {0}", findFullMatchesTime - findTime);
+            Console.WriteLine("StartsWith Time: {0}", findStartWithMatchesTime - findFullMatchesTime);
         }
 
         private static void InitJsonConvert(Dog dog)
