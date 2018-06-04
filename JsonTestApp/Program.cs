@@ -23,7 +23,6 @@ namespace TestApp
                 Barks = false
             };
 
-            // InsertDogs(db, 100_000, dog);
 
             // First calls are very slow
             InitJsonConvert(dog);
@@ -31,7 +30,7 @@ namespace TestApp
             var stopWatch = Stopwatch.StartNew();
 
             var db = new JsonDatabase<Dog>(dbPath);
-            // db.Preload();
+            // InsertDogs(db, 1_000_000, dog);
 
             var initTime = stopWatch.ElapsedMilliseconds;
 
@@ -46,7 +45,11 @@ namespace TestApp
             var dogs2 = db.FindByName("bello234", false).ToList();
             var findStartWithMatchesTime = stopWatch.ElapsedMilliseconds;
 
+            var dogs3 = db.FindByName(x => x.Contains("102")).ToList();
+            var iterateOverStringIndexTime = stopWatch.ElapsedMilliseconds;
+
             stopWatch.Stop();
+            db.Dispose();
 
             Console.WriteLine("Full Matches: {0}", dogs.Count);
             // printOut(dogs);
@@ -54,10 +57,13 @@ namespace TestApp
             Console.WriteLine("StartsWith Matches: {0}", dogs2.Count);
             // printOut(dogs2);
 
+            Console.WriteLine("Iterate over String Index Matches: {0}", dogs3.Count);
+
             Console.WriteLine("Init Time: {0}", initTime);
             Console.WriteLine("Single Known Time: {0}", findTime - initTime);
             Console.WriteLine("Full Matches Time: {0}", findFullMatchesTime - findTime);
             Console.WriteLine("StartsWith Time: {0}", findStartWithMatchesTime - findFullMatchesTime);
+            Console.WriteLine("Iterate over String Index Time: {0}", iterateOverStringIndexTime - findStartWithMatchesTime);
         }
 
         private static void InitJsonConvert(Dog dog)

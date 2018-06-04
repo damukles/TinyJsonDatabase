@@ -14,10 +14,10 @@ namespace TinyBlockStorage.Json
         readonly Type jsonType;
         readonly Stream mainDatabaseFile;
         readonly Stream primaryIndexFile;
-        readonly Stream secondaryIndexJson;
+        readonly Stream secondaryIndexFile;
         readonly Tree<Guid, uint> primaryIndex;
         readonly Tree<string, uint> secondaryIndex;
-        readonly RecordStorage jsonRecords;
+        readonly RecordStorage jsonRecordStorage;
         readonly JsonSerializer<T> jsonSerializer = new JsonSerializer<T>();
 
         object SyncRoot = new Object();
@@ -36,10 +36,10 @@ namespace TinyBlockStorage.Json
             // As soon as JsonDatabase is constructed, open the steam to talk to the underlying Jsons
             this.mainDatabaseFile = new FileStream(pathToJsonDb, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             this.primaryIndexFile = new FileStream(pathToJsonDb + ".pidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
-            this.secondaryIndexJson = new FileStream(pathToJsonDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
+            this.secondaryIndexFile = new FileStream(pathToJsonDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
 
             // Construct the RecordStorage that use to store main json data
-            this.jsonRecords = new RecordStorage(new BlockStorage(this.mainDatabaseFile, 4096, 48));
+            this.jsonRecordStorage = new RecordStorage(new BlockStorage(this.mainDatabaseFile, 4096, 48));
 
             // Construct the primary and secondary indexes 
             this.primaryIndex = new Tree<Guid, uint>(
@@ -55,7 +55,7 @@ namespace TinyBlockStorage.Json
                 new TreeDiskNodeManager<string, uint>(
                     new StringSerializer(),
                     new TreeUIntSerializer(),
-                    new RecordStorage(new BlockStorage(this.secondaryIndexJson, 4096))
+                    new RecordStorage(new BlockStorage(this.secondaryIndexFile, 4096))
                 ),
                 true
             );
@@ -88,7 +88,7 @@ namespace TinyBlockStorage.Json
             {
                 // Serialize the json and insert it
                 var (bytes, id) = this.jsonSerializer.Serialize(json);
-                var recordId = this.jsonRecords.Create(bytes);
+                var recordId = this.jsonRecordStorage.Create(bytes);
 
                 // Primary index
                 this.primaryIndex.Insert(id, recordId);
@@ -116,7 +116,7 @@ namespace TinyBlockStorage.Json
                 return null;
             }
 
-            return this.jsonSerializer.Deserializer(this.jsonRecords.Find(entry.Item2));
+            return this.jsonSerializer.Deserializer(this.jsonRecordStorage.Find(entry.Item2));
         }
 
         /// <summary>
@@ -146,7 +146,18 @@ namespace TinyBlockStorage.Json
                 }
 
                 // Still in range, yield return
-                yield return this.jsonSerializer.Deserializer(this.jsonRecords.Find(entry.Item2));
+                yield return this.jsonSerializer.Deserializer(this.jsonRecordStorage.Find(entry.Item2));
+            }
+        }
+
+        public IEnumerable<T> FindByName(Func<string, bool> func)
+        {
+            foreach (var entry in this.secondaryIndex.All())
+            {
+                if (func(entry.Item1))
+                {
+                    yield return this.jsonSerializer.Deserializer(this.jsonRecordStorage.Find(entry.Item2));
+                }
             }
         }
 
@@ -172,7 +183,7 @@ namespace TinyBlockStorage.Json
             if (disposing && !disposed)
             {
                 this.mainDatabaseFile.Dispose();
-                this.secondaryIndexJson.Dispose();
+                this.secondaryIndexFile.Dispose();
                 this.primaryIndexFile.Dispose();
                 this.disposed = true;
             }
