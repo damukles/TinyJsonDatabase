@@ -32,9 +32,11 @@ namespace TestApp
             var db = new JsonDatabase<Dog>(dbPath)
                 .CreateIndexOn<Dog, string>(propertyName: "Name", duplicateKeys: true);
 
-            // InsertDogs(db, 100_000, dog);
 
             var initTime = stopWatch.ElapsedMilliseconds;
+
+            InsertDogs(db, 1_000, dog);
+            var insertTime = stopWatch.ElapsedMilliseconds;
 
             var first = db.First<string>("Name", "bello13");
             var firstTime = stopWatch.ElapsedMilliseconds;
@@ -67,8 +69,9 @@ namespace TestApp
 
             // Console.WriteLine("Iterate over String Index Matches: {0}", dogs3.Count);
 
-            // Console.WriteLine("Init Time: {0}", initTime);
-            Console.WriteLine("First Time: {0}", firstTime);
+            Console.WriteLine("Init Time: {0}", initTime);
+            Console.WriteLine("Insert Time: {0}", insertTime - initTime);
+            Console.WriteLine("First Time: {0}", firstTime - insertTime);
             // Console.WriteLine("Single Known Time: {0}", findTime - initTime);
             var view = first == null ? null : new Dog[] { first };
             printOut(view);

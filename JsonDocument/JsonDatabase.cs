@@ -72,15 +72,15 @@ namespace TinyBlockStorage.Json
         public void CreateIndexOn<I>(string propertyName, bool duplicateKeys = false)
         {
             // Create Serializer dynamically
-            var serializerImpl = Assembly
-                .GetAssembly(typeof(JsonDatabase<>))
-                .GetTypes()
-                .Where(t => typeof(ISerializer<I>).IsAssignableFrom(t) && !t.IsInterface).SingleOrDefault();
+            // var serializerImpl = Assembly
+            //     .GetAssembly(typeof(JsonDatabase<>))
+            //     .GetTypes()
+            //     .Where(t => typeof(ISerializer<I>).IsAssignableFrom(t) && !t.IsInterface).SingleOrDefault();
 
-            if (serializerImpl == null)
-                throw new InvalidOperationException($"There is no Serializer for type {typeof(I).Name}, cannot create an Index on field {propertyName}.");
+            // if (serializerImpl == null)
+            //     throw new InvalidOperationException($"There is no Serializer for type {typeof(I).Name}, cannot create an Index on field {propertyName}.");
 
-            var serializerInstance = (ISerializer<I>)Activator.CreateInstance(serializerImpl);
+            // var serializerInstance = (ISerializer<I>)Activator.CreateInstance(serializerImpl);
 
             // Create Db file
             var dbFile = new FileStream(this.pathToJsonDb + "." + propertyName + ".idx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
@@ -309,10 +309,10 @@ namespace TinyBlockStorage.Json
             if (disposing && !disposed)
             {
                 this.mainDatabaseFile.Dispose();
+                this.primaryIndexFile.Dispose();
                 foreach (var entry in this.dbIndexFiles)
                     entry.Value.Dispose();
                 // this.secondaryIndexFile.Dispose();
-                // this.primaryIndexFile.Dispose();
                 this.disposed = true;
             }
         }
