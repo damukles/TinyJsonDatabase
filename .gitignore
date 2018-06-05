@@ -1,6 +1,7 @@
 *.db
-*.db.pidx
-*.db.sidx
+*.pidx
+*.sidx
+*.idx
 
 .vscode
 Properties/

@@ -10,7 +10,7 @@ namespace TinyBlockStorage.Core
         /// </summary>
         /// <param name="key">Key.</param>
         /// <param name="value">Value.</param>
-        void Insert(K key, V value);
+        void Insert(object keyObject, V value);
 
         /// <summary>
         /// Find an entry by key
