@@ -35,7 +35,7 @@ namespace TestApp
 
             var initTime = stopWatch.ElapsedMilliseconds;
 
-            InsertDogs(db, 1_000, dog);
+            // InsertDogs(db, 100_000, dog);
             var insertTime = stopWatch.ElapsedMilliseconds;
 
             var first = db.First<string>("Name", "bello13");
