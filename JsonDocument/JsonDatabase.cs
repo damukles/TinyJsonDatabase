@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TinyBlockStorage.Core;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace TinyBlockStorage.Json
 {
@@ -25,7 +24,9 @@ namespace TinyBlockStorage.Json
 
         // private Dictionary<Tuple<string, Type>, object> dbIndices = new Dictionary<Tuple<string, Type>, object>();
         private Dictionary<string, Stream> dbIndexFiles = new Dictionary<string, Stream>();
-        private Dictionary<Tuple<string, Type>, object> dbIndices = new Dictionary<Tuple<string, Type>, object>();
+        private Dictionary<string, IndexTree> dbIndices = new Dictionary<string, IndexTree>();
+
+        private Comparer<byte[]> ByteArrayComparer = Comparer<byte[]>.Create((a, b) => a.CompareTo(b));
 
         object SyncRoot = new Object();
 
@@ -85,29 +86,33 @@ namespace TinyBlockStorage.Json
             var dbFile = new FileStream(this.pathToJsonDb + "." + propertyName + ".idx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             dbIndexFiles.Add(propertyName, dbFile);
 
-            dbIndices.Add(new Tuple<string, Type>(propertyName, typeof(I)),
-                new Tree<I, uint>(
-                    new TreeDiskNodeManager<I, uint>(
-                        serializerInstance,
+            dbIndices.Add(propertyName,
+                new IndexTree(
+                    new TreeDiskNodeManager<byte[], uint>(
+                        new TreeByteArraySerializer(),
                         new TreeUIntSerializer(),
-                        new RecordStorage(new BlockStorage(dbFile, 4096))
+                        new RecordStorage(new BlockStorage(dbFile, 4096)),
+                        ByteArrayComparer
                     ),
                     duplicateKeys
                 )
             );
         }
 
-        private Tree<I, uint> IndexOf<I>(string propertyName)
+        private IndexTree IndexOf(string propertyName)
         {
-            object value;
-            if (dbIndices.TryGetValue(new Tuple<string, Type>(propertyName, typeof(I)), out value))
-            {
-                return (Tree<I, uint>)value;
-            }
-            else
-            {
-                return default(Tree<I, uint>);
-            };
+            IndexTree value;
+            dbIndices.TryGetValue(propertyName, out value);
+            return value;
+
+            // if (dbIndices.TryGetValue(propertyName, out value))
+            // {
+            //     return value;
+            // }
+            // else
+            // {
+            //     return default(IndexTree);
+            // };
         }
 
         /// <summary>
@@ -145,20 +150,42 @@ namespace TinyBlockStorage.Json
                 // Secondary Indices
                 foreach (var idx in this.dbIndices)
                 {
-                    var (propName, propType) = idx.Key;
-                    var bla = json.GetType().GetProperties();
-                    var jsonProp = bla.Where(p => p.Name.Equals(propName) && p.PropertyType.Equals(propType)).SingleOrDefault();
+                    var propName = idx.Key;
+                    var jsonProp = json
+                        .GetType()
+                        .GetProperties()
+                        .Where(p => p.Name.Equals(propName))
+                        .SingleOrDefault();
+
                     if (jsonProp != default(PropertyInfo))
                     {
-                        dynamic indexToInsertInto = idx.Value;
-                        var value = jsonProp.GetValue(json);
-                        indexToInsertInto.Insert(value, recordId);
+                        IndexTree indexToInsertInto = idx.Value;
+                        object value = jsonProp.GetValue(json);
+                        byte[] byteValue = GetBytes(value, jsonProp.PropertyType);
+                        indexToInsertInto.Insert(byteValue, recordId);
                     }
                 }
                 // Secondary index
                 // this.secondaryIndex.Insert(json.Name, recordId);
                 return id;
             }
+        }
+
+        private byte[] GetBytes<I>(I value)
+        {
+            return GetBytes((object)value, typeof(I));
+        }
+
+        private byte[] GetBytes(object value, Type valueType)
+        {
+            if (valueType == typeof(int)) return LittleEndianByteOrder.GetBytes((int)value);
+            if (valueType == typeof(long)) return LittleEndianByteOrder.GetBytes((long)value);
+            if (valueType == typeof(uint)) return LittleEndianByteOrder.GetBytes((uint)value);
+            if (valueType == typeof(float)) return LittleEndianByteOrder.GetBytes((float)value);
+            if (valueType == typeof(double)) return LittleEndianByteOrder.GetBytes((double)value);
+            if (valueType == typeof(string)) return System.Text.Encoding.UTF8.GetBytes((string)value);
+
+            throw new InvalidOperationException($"Unsupported Type {valueType} used as Index.");
         }
 
         public T First<I>(string propertyName, I value)
@@ -168,9 +195,11 @@ namespace TinyBlockStorage.Json
                 throw new ObjectDisposedException("JsonDatabase");
             }
 
+            var byteValue = GetBytes<I>(value);
+
             // Look in the primary index for this json
-            var entry = this.IndexOf<I>(propertyName).Get(value);
-            if (entry == null)
+            var entry = this.IndexOf(propertyName).Get(byteValue);
+            if (entry == default(Tuple<byte[], uint>))
             {
                 return null;
             }
@@ -180,13 +209,13 @@ namespace TinyBlockStorage.Json
 
         public IEnumerable<T> Find<I>(string propertyName, I value)
         {
-            var comparer = Comparer<I>.Default;
+            var byteValue = GetBytes<I>(value);
 
             // Use the secondary index to find this json
-            foreach (var entry in this.IndexOf<I>(propertyName).LargerThanOrEqualTo(value))
+            foreach (var entry in this.IndexOf(propertyName).LargerThanOrEqualTo(byteValue))
             {
                 // As soon as we reached larger key than the key given by client, stop
-                if (comparer.Compare(entry.Item1, value) > 0)
+                if (ByteArrayComparer.Compare(entry.Item1, byteValue) > 0)
                 {
                     break;
                 }

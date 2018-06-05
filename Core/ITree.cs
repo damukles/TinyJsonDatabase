@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace TinyBlockStorage.Core
 {
-    public interface IIndex<K, V>
+    public interface ITree<K, V>
     {
         /// <summary>
         /// Create new entry in this index that maps key K to value V
         /// </summary>
         /// <param name="key">Key.</param>
         /// <param name="value">Value.</param>
-        void Insert(object keyObject, V value);
+        void Insert(K key, V value);
 
         /// <summary>
         /// Find an entry by key

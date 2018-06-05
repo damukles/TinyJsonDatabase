@@ -3,13 +3,7 @@ using System.Collections.Generic;
 
 namespace TinyBlockStorage.Core
 {
-    // public class Tree : Tree<object, uint>
-    // {
-    //     public Tree(ITreeNodeManager<object, object> nodeManager, bool allowDuplicateKeys = false) : base(nodeManager, allowDuplicateKeys)
-    //     {
-    //     }
-    // }
-    public class Tree<K, V> : IIndex<K, V>
+    public class Tree<K, V> : ITree<K, V>
     {
         readonly ITreeNodeManager<K, V> nodeManager;
         readonly bool allowDuplicateKeys;
@@ -122,9 +116,8 @@ namespace TinyBlockStorage.Core
         /// <summary>
         /// Insert an entry to the tree
         /// </summary>
-        public void Insert(object keyObject, V value)
+        public void Insert(K key, V value)
         {
-            var key = (K)keyObject;
             // First find the node where key should be inserted
             var insertionIndex = 0;
             var leafNode = FindNodeForInsertion(key, ref insertionIndex);

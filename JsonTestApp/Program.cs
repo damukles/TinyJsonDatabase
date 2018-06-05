@@ -32,13 +32,15 @@ namespace TestApp
             var db = new JsonDatabase<Dog>(dbPath)
                 .CreateIndexOn<Dog, string>(propertyName: "Name", duplicateKeys: true);
 
-            InsertDogs(db, 1_000, dog);
+            // InsertDogs(db, 100_000, dog);
 
             var initTime = stopWatch.ElapsedMilliseconds;
 
-            var result = db.First<string>("Name", "bello13");
-            // var result = db.Find<string>("Name", "bello13").ToList();
-            var resultTime = stopWatch.ElapsedMilliseconds;
+            var first = db.First<string>("Name", "bello13");
+            var firstTime = stopWatch.ElapsedMilliseconds;
+
+            var all = db.Find<string>("Name", "bello13").ToList();
+            var allTime = stopWatch.ElapsedMilliseconds;
 
             // var dog2 = db.Find(Guid.Parse("8205585d-481d-4221-b995-230119a97337"));
             // var findTime = stopWatch.ElapsedMilliseconds;
@@ -66,11 +68,14 @@ namespace TestApp
             // Console.WriteLine("Iterate over String Index Matches: {0}", dogs3.Count);
 
             // Console.WriteLine("Init Time: {0}", initTime);
-            Console.WriteLine("Result Time: {0}", resultTime);
+            Console.WriteLine("First Time: {0}", firstTime);
             // Console.WriteLine("Single Known Time: {0}", findTime - initTime);
-            // foreach (var item in result)
-            //     Console.WriteLine("Result Item: {0}, {1}", item.Name, item.Age);
-            Console.WriteLine("Result Item: {0}, {1}", result.Name, result.Age);
+            var view = first == null ? null : new Dog[] { first };
+            printOut(view);
+
+            Console.WriteLine("All Matching Time: {0}", allTime - firstTime);
+            Console.WriteLine("All Matching Count: {0}", all?.Count);
+            printOut(all);
             // Console.WriteLine("Full Matches Time: {0}", findFullMatchesTime - findTime);
             // Console.WriteLine("StartsWith Time: {0}", findStartWithMatchesTime - findFullMatchesTime);
             // Console.WriteLine("Iterate over String Index Time: {0}", iterateOverStringIndexTime - findStartWithMatchesTime);
