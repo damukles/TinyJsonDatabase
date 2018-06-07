@@ -30,7 +30,7 @@ namespace TinyBlockStorage.Json
         /// </summary>
         /// <param name="pathToJsonDb">Path to json db.</param>
         /// <param name="secondaryIndices">Tuple of propertyName and duplicateKeys</param>
-        public JsonDatabase(string pathToJsonDb, IEnumerable<Tuple<string, bool>> secondaryIndices)
+        public JsonDatabase(string pathToJsonDb, IEnumerable<Tuple<string, bool>> secondaryIndices = null)
         {
             if (pathToJsonDb == null)
                 throw new ArgumentNullException("pathToJsonDb");
@@ -57,8 +57,8 @@ namespace TinyBlockStorage.Json
                 false
             );
 
-            var secondaryIndicesToRebuild = secondaryIndices
-                .Select(x => CreateIndexOn(x.Item1, x.Item2))
+            var secondaryIndicesToRebuild = secondaryIndices?
+                .Select(x => CreateIndexOn(x.Item1, x.Item2)).ToList()
                 .Where(x => x.Item2 == false)
                 .Select(x => x.Item1);
 
@@ -116,8 +116,8 @@ namespace TinyBlockStorage.Json
             var byteValue = GetBytes<I>(value);
 
             // Look in the primary index for this json
-            var entry = this.IndexOf(propertyName).Get(byteValue);
-            if (entry == default(Tuple<byte[], uint>))
+            var entry = this.IndexOf(propertyName)?.Get(byteValue);
+            if (entry == null)
             {
                 return null;
             }
@@ -182,7 +182,7 @@ namespace TinyBlockStorage.Json
             {
                 var propsHash = new HashSet<string>(propertyNames);
                 indices = this.dbIndices
-                    .Where(x => propsHash.Contains(x.Key))
+                    .Where(x => propertyNames.Contains(x.Key))
                     .ToDictionary(k => k.Key, v => v.Value);
             }
 
@@ -229,28 +229,28 @@ namespace TinyBlockStorage.Json
             if (rebuildPrimaryIndex == false && (propertyNames == null || !propertyNames.Any()))
                 return;
 
-            uint currentRecordStart = 0;
-
-            for (uint i = 0; i < this.mainDatabaseFile.Length; i = i + (uint)this.mainDatabaseFileBlockSize)
+            for (uint curRecStart = 1;
+                 curRecStart < this.mainDatabaseFile.Length / this.mainDatabaseFileBlockSize;
+                 curRecStart++)
             {
-                // THIS DOES NOT WORK
-                var currentRecord = this.jsonRecordStorage.Find(currentRecordStart);
+                var currentRecord = this.jsonRecordStorage.Find(curRecStart);
                 if (currentRecord != null)
                 {
                     T obj = this.jsonSerializer.Deserializer(currentRecord);
 
                     // Primary index
-                    if (rebuildPrimaryIndex) this.primaryIndex.Insert(obj.Id, currentRecordStart);
+                    if (rebuildPrimaryIndex) this.primaryIndex.Insert(obj.Id, curRecStart);
 
                     // Secondary Indeces
-                    InsertIntoSecondaryIndeces(obj, currentRecordStart, propertyNames);
+                    InsertIntoSecondaryIndeces(obj, curRecStart, propertyNames);
+
                 }
             }
         }
 
         private IndexTree IndexOf(string propertyName)
         {
-            IndexTree value;
+            IndexTree value = null;
             dbIndices.TryGetValue(propertyName, out value);
             return value;
         }

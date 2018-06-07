@@ -14,7 +14,6 @@ namespace TestApp
         {
             var dbPath = "data.db";
 
-
             // dummy object
             var dog = new Dog()
             {
@@ -38,8 +37,10 @@ namespace TestApp
 
             var initTime = stopWatch.ElapsedMilliseconds;
 
-            // InsertDogs(db, 100_000, dog);
-            var insertTime = stopWatch.ElapsedMilliseconds;
+            var findGuid = db.Find(Guid.Parse("7975f0e3-1565-4028-9303-e055af12bfb9"));
+
+            // InsertDogs(db, 1_000, dog);
+            var guidTime = stopWatch.ElapsedMilliseconds;
 
             var first = db.First<string>("Name", "bello13");
             var firstTime = stopWatch.ElapsedMilliseconds;
@@ -73,11 +74,10 @@ namespace TestApp
             // Console.WriteLine("Iterate over String Index Matches: {0}", dogs3.Count);
 
             Console.WriteLine("Init Time: {0}", initTime);
-            Console.WriteLine("Insert Time: {0}", insertTime - initTime);
-            Console.WriteLine("First Time: {0}", firstTime - insertTime);
-            // Console.WriteLine("Single Known Time: {0}", findTime - initTime);
-            var view = first == null ? null : new Dog[] { first };
-            printOut(view);
+            Console.WriteLine("Guid Time: {0}", guidTime - initTime);
+            printOut(findGuid == null ? null : new Dog[] { findGuid });
+            Console.WriteLine("First Time: {0}", firstTime - guidTime);
+            printOut(first == null ? null : new Dog[] { first });
 
             Console.WriteLine("All Matching Time: {0}", allTime - firstTime);
             Console.WriteLine("All Matching Count: {0}", all?.Count);
