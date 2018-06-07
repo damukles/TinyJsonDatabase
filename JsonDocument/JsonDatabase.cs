@@ -29,15 +29,18 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// </summary>
         /// <param name="pathToJsonDb">Path to json db.</param>
-        public JsonDatabase(string pathToJsonDb)
+        /// <param name="secondaryIndices">Tuple of propertyName and duplicateKeys</param>
+        public JsonDatabase(string pathToJsonDb, IEnumerable<Tuple<string, bool>> secondaryIndices)
         {
             if (pathToJsonDb == null)
                 throw new ArgumentNullException("pathToJsonDb");
 
             this.pathToJsonDb = pathToJsonDb;
-
+            this.mainDatabaseFileBlockSize = 4096;
             // As soon as JsonDatabase is constructed, open the steam to talk to the underlying Jsons
             this.mainDatabaseFile = new FileStream(pathToJsonDb, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
+
+            bool primaryIndexExists = File.Exists(pathToJsonDb + ".pidx");
             this.primaryIndexFile = new FileStream(pathToJsonDb + ".pidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             // this.secondaryIndexFile = new FileStream(pathToJsonDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
 
@@ -53,49 +56,16 @@ namespace TinyBlockStorage.Json
                 ),
                 false
             );
+
+            var secondaryIndicesToRebuild = secondaryIndices
+                .Select(x => CreateIndexOn(x.Item1, x.Item2))
+                .Where(x => x.Item2 == false)
+                .Select(x => x.Item1);
+
+            // Rebuild every index where there was no corresponding file
+            RebuildIndices(!primaryIndexExists, secondaryIndicesToRebuild);
         }
 
-        public void CreateIndexOn<I>(string propertyName, bool duplicateKeys = false)
-        {
-            // Create Db file
-            var dbFile = new FileStream(this.pathToJsonDb + "." + propertyName + ".idx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
-            dbIndexFiles.Add(propertyName, dbFile);
-
-            dbIndices.Add(propertyName,
-                new IndexTree(
-                    new TreeDiskNodeManager<byte[], uint>(
-                        new TreeByteArraySerializer(),
-                        new TreeUIntSerializer(),
-                        new RecordStorage(new BlockStorage(dbFile, 4096)),
-                        ByteArrayComparer
-                    ),
-                    duplicateKeys
-                )
-            );
-        }
-
-        public void RebuildIndex()
-        {
-            // Delete Index-File if exists first or only do if file does not exist
-            // Maybe do this only in constructor?
-
-            uint currentRecordStart = 0;
-
-            for (uint i = 0; i < this.mainDatabaseFile.Length; i = i + (uint)this.mainDatabaseFileBlockSize)
-            {
-                var currentRecord = this.jsonRecordStorage.Find(currentRecordStart);
-                if (currentRecord != null)
-                {
-                    T obj = this.jsonSerializer.Deserializer(currentRecord);
-
-                    // Primary index
-                    this.primaryIndex.Insert(obj.Id, currentRecordStart);
-
-                    // Secondary Indeces
-                    InsertIntoSecondaryIndeces(obj, currentRecordStart);
-                }
-            }
-        }
         /// <summary>
         /// Update given json
         /// </summary>
@@ -201,15 +171,25 @@ namespace TinyBlockStorage.Json
             throw new NotImplementedException();
         }
 
-        private void InsertIntoSecondaryIndeces(T json, uint recordId)
+        private void InsertIntoSecondaryIndeces(T json, uint recordId, IEnumerable<string> propertyNames = null)
         {
-            foreach (var idx in this.dbIndices)
-            {
-                var propName = idx.Key;
-                var jsonProp = json
+            var jsonProps = json
                     .GetType()
-                    .GetProperties()
-                    .Where(p => p.Name.Equals(propName))
+                    .GetProperties();
+
+            var indices = this.dbIndices;
+            if (propertyNames != null)
+            {
+                var propsHash = new HashSet<string>(propertyNames);
+                indices = this.dbIndices
+                    .Where(x => propsHash.Contains(x.Key))
+                    .ToDictionary(k => k.Key, v => v.Value);
+            }
+
+            foreach (var idx in indices)
+            {
+                var jsonProp = jsonProps
+                    .Where(p => p.Name.Equals(idx.Key))
                     .SingleOrDefault();
 
                 if (jsonProp != default(PropertyInfo))
@@ -218,6 +198,52 @@ namespace TinyBlockStorage.Json
                     object value = jsonProp.GetValue(json);
                     byte[] byteValue = GetBytes(value, jsonProp.PropertyType);
                     indexToInsertInto.Insert(byteValue, recordId);
+                }
+            }
+        }
+
+        private Tuple<string, bool> CreateIndexOn(string propertyName, bool duplicateKeys = false)
+        {
+            bool indexExists = File.Exists(this.pathToJsonDb + "." + propertyName + ".idx");
+
+            // Create Db file
+            var dbFile = new FileStream(this.pathToJsonDb + "." + propertyName + ".idx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
+            this.dbIndexFiles.Add(propertyName, dbFile);
+
+            this.dbIndices.Add(propertyName,
+                new IndexTree(
+                    new TreeDiskNodeManager<byte[], uint>(
+                        new TreeByteArraySerializer(),
+                        new TreeUIntSerializer(),
+                        new RecordStorage(new BlockStorage(dbFile, 4096)),
+                        ByteArrayComparer
+                    ),
+                    duplicateKeys
+                )
+            );
+            return new Tuple<string, bool>(propertyName, indexExists);
+        }
+
+        private void RebuildIndices(bool rebuildPrimaryIndex, IEnumerable<string> propertyNames)
+        {
+            if (rebuildPrimaryIndex == false && (propertyNames == null || !propertyNames.Any()))
+                return;
+
+            uint currentRecordStart = 0;
+
+            for (uint i = 0; i < this.mainDatabaseFile.Length; i = i + (uint)this.mainDatabaseFileBlockSize)
+            {
+                // THIS DOES NOT WORK
+                var currentRecord = this.jsonRecordStorage.Find(currentRecordStart);
+                if (currentRecord != null)
+                {
+                    T obj = this.jsonSerializer.Deserializer(currentRecord);
+
+                    // Primary index
+                    if (rebuildPrimaryIndex) this.primaryIndex.Insert(obj.Id, currentRecordStart);
+
+                    // Secondary Indeces
+                    InsertIntoSecondaryIndeces(obj, currentRecordStart, propertyNames);
                 }
             }
         }

@@ -29,9 +29,12 @@ namespace TestApp
 
             var stopWatch = Stopwatch.StartNew();
 
-            var db = new JsonDatabase<Dog>(dbPath)
-                .CreateIndexOn<Dog, string>(propertyName: "Name", duplicateKeys: true);
-
+            var db = new JsonDatabase<Dog>(dbPath,
+                new List<Tuple<string, bool>>()
+                {
+                    new Tuple<string, bool>("Name", true)
+                }
+            );
 
             var initTime = stopWatch.ElapsedMilliseconds;
 

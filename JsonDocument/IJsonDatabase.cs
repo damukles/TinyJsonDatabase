@@ -5,7 +5,7 @@ namespace TinyBlockStorage.Json
 {
     public interface IJsonDatabase<T>
     {
-        void CreateIndexOn<I>(string propertyName, bool duplicatekeys);
+        // void CreateIndexOn<I>(string propertyName, bool duplicatekeys);
         // Index<I> IndexOf<I>(string propertyName);
         Guid Insert(T json);
         void Delete(T json);
