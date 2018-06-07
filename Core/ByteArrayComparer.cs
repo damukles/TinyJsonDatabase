@@ -9,6 +9,7 @@ namespace TinyBlockStorage.Core
             if (a.Length == b.Length)
             {
 
+                // return StructuralComparisons.StructuralComparer.Compare(a, b);
                 for (int i = 0; i < a.Length; i++)
                 {
                     int comparison = a[i].CompareTo(b[i]);

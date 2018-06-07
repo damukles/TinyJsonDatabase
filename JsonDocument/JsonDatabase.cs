@@ -19,8 +19,8 @@ namespace TinyBlockStorage.Json
         readonly Tree<Guid, uint> primaryIndex;
         readonly RecordStorage jsonRecordStorage;
         readonly JsonSerializer<T> jsonSerializer = new JsonSerializer<T>();
-        private Dictionary<string, Stream> dbIndexFiles = new Dictionary<string, Stream>();
-        private Dictionary<string, IndexTree> dbIndices = new Dictionary<string, IndexTree>();
+        private Dictionary<string, Stream> secondaryIndexFiles = new Dictionary<string, Stream>();
+        private Dictionary<string, IndexTree> secondaryIndices = new Dictionary<string, IndexTree>();
         private Comparer<byte[]> ByteArrayComparer => Comparer<byte[]>.Create((a, b) => a.CompareTo(b));
 
         object SyncRoot = new Object();
@@ -69,8 +69,11 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// Update given json
         /// </summary>
-        public void Update(T json)
+        public void Update(T obj)
         {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
             if (disposed)
             {
                 throw new ObjectDisposedException("JsonDatabase");
@@ -82,8 +85,11 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// Insert a new json entry into our json database
         /// </summary>
-        public Guid Insert(T json)
+        public Guid Insert(T obj)
         {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
             if (disposed)
             {
                 throw new ObjectDisposedException("JsonDatabase");
@@ -92,28 +98,34 @@ namespace TinyBlockStorage.Json
             lock (SyncRoot)
             {
                 // Serialize the json and insert it
-                var (bytes, id) = this.jsonSerializer.Serialize(json);
+                var (bytes, id) = this.jsonSerializer.Serialize(obj);
                 var recordId = this.jsonRecordStorage.Create(bytes);
 
                 // Primary index
                 this.primaryIndex.Insert(id, recordId);
 
                 // Secondary Indices
-                InsertIntoSecondaryIndeces(json, recordId);
+                InsertIntoSecondaryIndeces(obj, recordId);
                 // Secondary index
                 // this.secondaryIndex.Insert(json.Name, recordId);
                 return id;
             }
         }
 
-        public T First<I>(string propertyName, I value)
+        public T First<I>(string propertyName, I propertyValue)
         {
+            if (String.IsNullOrWhiteSpace(propertyName))
+                throw new ArgumentNullException(nameof(propertyName));
+
+            if (propertyValue == null)
+                throw new ArgumentNullException(nameof(propertyValue));
+
             if (disposed)
             {
                 throw new ObjectDisposedException("JsonDatabase");
             }
 
-            var byteValue = GetBytes<I>(value);
+            var byteValue = GetBytes<I>(propertyValue);
 
             // Look in the primary index for this json
             var entry = this.IndexOf(propertyName)?.Get(byteValue);
@@ -125,12 +137,28 @@ namespace TinyBlockStorage.Json
             return this.jsonSerializer.Deserializer(this.jsonRecordStorage.Find(entry.Item2));
         }
 
-        public IEnumerable<T> Find<I>(string propertyName, I value)
+        public IEnumerable<T> Find<I>(string propertyName, I propertyValue)
         {
-            var byteValue = GetBytes<I>(value);
+            if (String.IsNullOrWhiteSpace(propertyName))
+                throw new ArgumentNullException(nameof(propertyName));
+
+            if (propertyValue == null)
+                throw new ArgumentNullException(nameof(propertyValue));
+
+            if (disposed)
+            {
+                throw new ObjectDisposedException("JsonDatabase");
+            }
+
+            var byteValue = GetBytes<I>(propertyValue);
 
             // Use the secondary index to find this json
-            foreach (var entry in this.IndexOf(propertyName).LargerThanOrEqualTo(byteValue))
+            var index = this.IndexOf(propertyName);
+
+            if (index == null)
+                yield break;
+
+            foreach (var entry in index.LargerThanOrEqualTo(byteValue))
             {
                 // As soon as we reached larger key than the key given by client, stop
                 if (ByteArrayComparer.Compare(entry.Item1, byteValue) > 0)
@@ -146,7 +174,7 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// Find a json by its unique id
         /// </summary>
-        public T Find(Guid jsonId)
+        public T Find(Guid objId)
         {
             if (disposed)
             {
@@ -154,7 +182,7 @@ namespace TinyBlockStorage.Json
             }
 
             // Look in the primary index for this json
-            var entry = this.primaryIndex.Get(jsonId);
+            var entry = this.primaryIndex.Get(objId);
             if (entry == null)
             {
                 return null;
@@ -166,36 +194,67 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// Delete specified json from our database
         /// </summary>
-        public void Delete(T json)
+        public void Delete(T obj)
         {
-            throw new NotImplementedException();
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            if (disposed)
+            {
+                throw new ObjectDisposedException("JsonDatabase");
+            }
+
+            var entry = this.primaryIndex.Get(obj.Id);
+
+            if (entry == null)
+                return;
+
+            this.jsonRecordStorage.Delete(entry.Item2);
+
+            this.primaryIndex.Delete(entry.Item1);
+
+            var objProps = obj
+                .GetType()
+                .GetProperties()
+                .ToList();
+
+            var indices = this.secondaryIndices
+                .Where(x => objProps.SingleOrDefault(p => p.Name.Equals(x.Key)) != null)
+                .ToList();
+
+            foreach (var idx in indices)
+            {
+                var secondaryId = GetBytes(idx.Key);
+                idx.Value.Delete(secondaryId, entry.Item2);
+            }
         }
 
-        private void InsertIntoSecondaryIndeces(T json, uint recordId, IEnumerable<string> propertyNames = null)
+        private void InsertIntoSecondaryIndeces(T obj, uint recordId, IEnumerable<string> propertyNames = null)
         {
-            var jsonProps = json
+            var objProps = obj
                     .GetType()
-                    .GetProperties();
+                    .GetProperties()
+                    .ToList();
 
-            var indices = this.dbIndices;
+            var indices = this.secondaryIndices;
             if (propertyNames != null)
             {
                 var propsHash = new HashSet<string>(propertyNames);
-                indices = this.dbIndices
+                indices = this.secondaryIndices
                     .Where(x => propertyNames.Contains(x.Key))
                     .ToDictionary(k => k.Key, v => v.Value);
             }
 
             foreach (var idx in indices)
             {
-                var jsonProp = jsonProps
+                var jsonProp = objProps
                     .Where(p => p.Name.Equals(idx.Key))
                     .SingleOrDefault();
 
                 if (jsonProp != default(PropertyInfo))
                 {
                     IndexTree indexToInsertInto = idx.Value;
-                    object value = jsonProp.GetValue(json);
+                    object value = jsonProp.GetValue(obj);
                     byte[] byteValue = GetBytes(value, jsonProp.PropertyType);
                     indexToInsertInto.Insert(byteValue, recordId);
                 }
@@ -208,9 +267,9 @@ namespace TinyBlockStorage.Json
 
             // Create Db file
             var dbFile = new FileStream(this.pathToJsonDb + "." + propertyName + ".idx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
-            this.dbIndexFiles.Add(propertyName, dbFile);
+            this.secondaryIndexFiles.Add(propertyName, dbFile);
 
-            this.dbIndices.Add(propertyName,
+            this.secondaryIndices.Add(propertyName,
                 new IndexTree(
                     new TreeDiskNodeManager<byte[], uint>(
                         new TreeByteArraySerializer(),
@@ -251,7 +310,7 @@ namespace TinyBlockStorage.Json
         private IndexTree IndexOf(string propertyName)
         {
             IndexTree value = null;
-            dbIndices.TryGetValue(propertyName, out value);
+            secondaryIndices.TryGetValue(propertyName, out value);
             return value;
         }
 
@@ -287,7 +346,7 @@ namespace TinyBlockStorage.Json
             {
                 this.mainDatabaseFile.Dispose();
                 this.primaryIndexFile.Dispose();
-                foreach (var entry in this.dbIndexFiles)
+                foreach (var entry in this.secondaryIndexFiles)
                     entry.Value.Dispose();
                 // this.secondaryIndexFile.Dispose();
                 this.disposed = true;

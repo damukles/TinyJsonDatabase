@@ -22,7 +22,6 @@ namespace TestApp
                 Barks = false
             };
 
-
             // First calls are very slow
             InitJsonConvert(dog);
 
@@ -37,9 +36,11 @@ namespace TestApp
 
             var initTime = stopWatch.ElapsedMilliseconds;
 
-            var findGuid = db.Find(Guid.Parse("7975f0e3-1565-4028-9303-e055af12bfb9"));
+            var insertedGuid = InsertDogs(db, 20);
+            var findGuid = db.Find(insertedGuid);
+            db.Delete(new Dog() { Id = insertedGuid });
+            var shouldBeNull = db.Find(insertedGuid);
 
-            // InsertDogs(db, 1_000, dog);
             var guidTime = stopWatch.ElapsedMilliseconds;
 
             var first = db.First<string>("Name", "bello13");
@@ -94,14 +95,19 @@ namespace TestApp
             var _ = JsonConvert.DeserializeObject<Dog>(dummy);
         }
 
-        private static void InsertDogs(JsonDatabase<Dog> db, int count, Dog dog)
+        private static Guid InsertDogs(JsonDatabase<Dog> db, int count)
         {
-            Guid id;
+            Guid id = Guid.Empty;
             for (var i = 0; i < count; i++)
             {
-                dog.Name = "bello" + i.ToString();
-                id = db.Insert(dog);
+                id = db.Insert(new Dog()
+                {
+                    Name = "bello13",// + i.ToString(),
+                    Age = 7,
+                    Barks = true
+                });
             }
+            return id;
         }
 
         private static void printOut(IEnumerable<Dog> dogs)

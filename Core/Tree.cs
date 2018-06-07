@@ -143,7 +143,7 @@ namespace TinyBlockStorage.Core
         }
 
         /// <summary>
-        /// Find entry by its key, this returns NULL when not foudn
+        /// Find entry by its key, this returns NULL when not found
         /// </summary>
         public Tuple<K, V> Get(K key)
         {
