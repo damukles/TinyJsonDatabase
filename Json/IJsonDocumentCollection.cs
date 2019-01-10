@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TinyBlockStorage.Json
 {
-    public interface IJsonDatabase<T>
+    public interface IJsonDocumentCollection<T>
     {
         // void CreateIndexOn<I>(string propertyName, bool duplicatekeys);
         // Index<I> IndexOf<I>(string propertyName);

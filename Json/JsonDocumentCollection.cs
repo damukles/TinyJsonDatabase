@@ -8,10 +8,11 @@ using System.Text;
 
 namespace TinyBlockStorage.Json
 {
-    /// <summary>
-    /// Then, define our database
-    /// </summary>
-    public class JsonDatabase<T> : IJsonDatabase<T>, IDisposable where T : IJsonDocument, new()
+    public abstract class JsonDocumentCollection
+    {
+    }
+
+    public class JsonDocumentCollection<T> : JsonDocumentCollection, IJsonDocumentCollection<T>, IDisposable where T : IJsonDocument, new()
     {
         private readonly string pathToJsonDb;
         readonly Stream mainDatabaseFile;
@@ -31,7 +32,7 @@ namespace TinyBlockStorage.Json
         /// </summary>
         /// <param name="pathToJsonDb">Path to json db.</param>
         /// <param name="secondaryIndices">Tuple of propertyName and duplicateKeys</param>
-        public JsonDatabase(string pathToJsonDb, IEnumerable<Tuple<string, bool>> secondaryIndices = null)
+        public JsonDocumentCollection(string pathToJsonDb, IEnumerable<Tuple<string, bool>> secondaryIndices = null)
         {
             if (pathToJsonDb == null)
                 throw new ArgumentNullException("pathToJsonDb");
@@ -361,7 +362,7 @@ namespace TinyBlockStorage.Json
             }
         }
 
-        ~JsonDatabase()
+        ~JsonDocumentCollection()
         {
             Dispose(false);
         }

@@ -34,7 +34,7 @@ namespace TestApp
 
             var stopWatch = Stopwatch.StartNew();
 
-            var db = new JsonDatabase<Dog>(dbPath,
+            var db = new JsonDocumentCollection<Dog>(dbPath,
                 new List<Tuple<string, bool>>()
                 {
                     new Tuple<string, bool>("Name", true)
@@ -103,7 +103,7 @@ namespace TestApp
             var _ = JsonConvert.DeserializeObject<Dog>(dummy);
         }
 
-        private static Guid InsertDogs(JsonDatabase<Dog> db, int count)
+        private static Guid InsertDogs(JsonDocumentCollection<Dog> db, int count)
         {
             Guid id = Guid.Empty;
             for (var i = 0; i < count; i++)
