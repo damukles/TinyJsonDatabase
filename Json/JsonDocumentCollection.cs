@@ -2,9 +2,10 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using TinyBlockStorage.Core;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using TinyBlockStorage.Core;
 
 namespace TinyBlockStorage.Json
 {
@@ -116,23 +117,24 @@ namespace TinyBlockStorage.Json
             }
         }
 
-        public T First<I>(string propertyName, I propertyValue)
+        public T First(Expression<Func<T, object>> propertySelector, object propertyValue)
         {
-            if (String.IsNullOrWhiteSpace(propertyName))
-                throw new ArgumentNullException(nameof(propertyName));
-
-            // if (propertyValue == null)
-            //     throw new ArgumentNullException(nameof(propertyValue));
-
             if (disposed)
             {
                 throw new ObjectDisposedException("JsonDatabase");
             }
 
-            var byteValue = GetBytes<I>(propertyValue);
+            if (propertySelector == null)
+                throw new ArgumentNullException(nameof(propertySelector));
+
+            var property = ReflectionHelper.PropertyFromLambda(propertySelector);
+            if (property == null)
+                throw new ArgumentOutOfRangeException(nameof(propertySelector) + ": Only properties are supported.");
+
+            var byteValue = GetBytes(propertyValue, property.PropertyType);
 
             // Look in the secondary index for this json
-            var entry = this.IndexOf(propertyName)?.Get(byteValue);
+            var entry = this.IndexOf(property.Name)?.Get(byteValue);
             if (entry == null)
             {
                 return default(T);
@@ -141,23 +143,24 @@ namespace TinyBlockStorage.Json
             return this.jsonSerializer.Deserialize(this.jsonRecordStorage.Find(entry.Item2));
         }
 
-        public IEnumerable<T> Find<I>(string propertyName, I propertyValue)
+        public IEnumerable<T> Find(Expression<Func<T, object>> propertySelector, object propertyValue)
         {
-            if (String.IsNullOrWhiteSpace(propertyName))
-                throw new ArgumentNullException(nameof(propertyName));
-
-            // if (propertyValue == null)
-            //     throw new ArgumentNullException(nameof(propertyValue));
-
             if (disposed)
             {
                 throw new ObjectDisposedException("JsonDatabase");
             }
 
-            var byteValue = GetBytes<I>(propertyValue);
+            if (propertySelector == null)
+                throw new ArgumentNullException(nameof(propertySelector));
+
+            var property = ReflectionHelper.PropertyFromLambda(propertySelector);
+            if (property == null)
+                throw new ArgumentOutOfRangeException(nameof(propertySelector) + ": Only properties are supported.");
+
+            var byteValue = GetBytes(propertyValue, property.PropertyType);
 
             // Use the secondary index to find this json
-            var index = this.IndexOf(propertyName);
+            var index = this.IndexOf(property.Name);
 
             if (index == null)
                 yield break;

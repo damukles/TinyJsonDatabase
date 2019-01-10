@@ -25,7 +25,7 @@ namespace JsonDatabaseTestApp
 
                 var id = db.GetCollection<Person>().Insert(pers);
 
-                var person = db.GetCollection<Person>().First<string>("Name", "Daniel");
+                var person = db.GetCollection<Person>().First(p => p.Age, 1);
 
                 db.GetCollection<Person>().Delete(person.Id);
             }

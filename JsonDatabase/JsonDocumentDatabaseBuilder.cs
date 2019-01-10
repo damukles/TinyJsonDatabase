@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using TinyBlockStorage.Json;
 
@@ -84,13 +82,13 @@ namespace TinyBlockStorage.JsonDatabase
         /// <summary>
         /// Create a secondary index on a property
         /// </summary>
-        public CollectionConfiguration<T> WithIndexOn(Expression<Func<T, object>> properySelector, bool allowDuplicateKeys = true)
+        public CollectionConfiguration<T> WithIndexOn(Expression<Func<T, object>> propertySelector, bool allowDuplicateKeys = true)
         {
-            var propertyName = (((properySelector.Body as MemberExpression)?.Member) as PropertyInfo)?.Name;
-            if (propertyName == null)
-                throw new ArgumentOutOfRangeException(nameof(properySelector) + ": Only properties are supported.");
+            var property = ReflectionHelper.PropertyFromLambda(propertySelector);
+            if (property == null)
+                throw new ArgumentOutOfRangeException(nameof(propertySelector) + ": Only properties are supported.");
 
-            this.SecondaryIndices.Add(new Tuple<string, bool>(propertyName, allowDuplicateKeys));
+            this.SecondaryIndices.Add(new Tuple<string, bool>(property.Name, allowDuplicateKeys));
             return this;
         }
 
