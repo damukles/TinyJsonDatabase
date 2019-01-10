@@ -8,8 +8,11 @@ using System.Text;
 
 namespace TinyBlockStorage.Json
 {
-    public abstract class JsonDocumentCollection
+    public abstract class JsonDocumentCollection : IDisposable
     {
+        public void Dispose()
+        {
+        }
     }
 
     public class JsonDocumentCollection<T> : JsonDocumentCollection, IJsonDocumentCollection<T>, IDisposable where T : IJsonDocument, new()
@@ -341,10 +344,11 @@ namespace TinyBlockStorage.Json
         }
 
         #region Dispose
-        public void Dispose()
+        public new void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+            base.Dispose();
         }
 
         bool disposed = false;
@@ -356,7 +360,9 @@ namespace TinyBlockStorage.Json
                 this.mainDatabaseFile.Dispose();
                 this.primaryIndexFile.Dispose();
                 foreach (var entry in this.secondaryIndexFiles)
+                {
                     entry.Value.Dispose();
+                }
                 // this.secondaryIndexFile.Dispose();
                 this.disposed = true;
             }
