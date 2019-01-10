@@ -16,6 +16,7 @@ Unterstützte Datenformate für Sekundäre Indices
 
 * string (inkl. null)
 * int
+* long
 * uint
 * float
 * double
