@@ -16,18 +16,24 @@ namespace JsonDatabaseTestApp
                 .AddCollection<Dog>();
 
 
-            using (var db = builder.Build())
+            using (var database = builder.Build())
             {
                 var pers = new Person()
                 {
                     Name = "Daniel"
                 };
 
-                var id = db.GetCollection<Person>().Insert(pers);
+                var id = database
+                    .GetCollection<Person>()
+                    .Insert(pers);
 
-                var person = db.GetCollection<Person>().First(p => p.Name, "Daniel");
+                var person = database
+                    .GetCollection<Person>()
+                    .First(p => p.Name, "Daniel");
 
-                db.GetCollection<Person>().Delete(person.Id);
+                database
+                    .GetCollection<Person>()
+                    .Delete(person.Id);
             }
         }
     }
