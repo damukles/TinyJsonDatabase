@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Newtonsoft.Json;
 using TinyBlockStorage.Core;
 
@@ -13,7 +14,7 @@ namespace TinyBlockStorage.Json
         public (byte[], Guid) Serialize(T obj)
         {
             var json = JsonConvert.SerializeObject(obj);
-            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            var bytes = Encoding.UTF8.GetBytes(json);
 
             var jsonData = new byte[
                 16 +                    // 16 bytes for Guid id
@@ -69,7 +70,7 @@ namespace TinyBlockStorage.Json
             var jsonData = new byte[dataLength];
             Buffer.BlockCopy(src: data, srcOffset: 16 + 4, dst: jsonData, dstOffset: 0, count: jsonData.Length);
 
-            var json = System.Text.Encoding.UTF8.GetString(jsonData);
+            var json = Encoding.UTF8.GetString(jsonData);
             var obj = JsonConvert.DeserializeObject<T>(json);
             obj.Id = id;
 

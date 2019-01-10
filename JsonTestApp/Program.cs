@@ -12,6 +12,13 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
+
+            // byte[] empty = System.Text.Encoding.UTF8.GetBytes("");
+            // byte[] space = System.Text.Encoding.UTF8.GetBytes(" ");
+            // byte[] nullRep = new byte[1];
+
+            // string stringNullRep = System.Text.Encoding.UTF8.GetString(nullRep);
+
             var dbPath = "data.db";
 
             // dummy object
@@ -38,15 +45,16 @@ namespace TestApp
 
             var insertedGuid = InsertDogs(db, 20);
             var findGuid = db.Find(insertedGuid);
-            // db.Delete(new Dog() { Id = insertedGuid });
-            // var shouldBeNull = db.Find(insertedGuid);
+            // This is a very bad idea, because secondary indices will not be matched and not be deleted.
+            db.Delete(insertedGuid);
+            var shouldBeNull = db.Find(insertedGuid);
 
             var insertTime = stopWatch.ElapsedMilliseconds;
 
-            var first = db.First<string>("Name", "bello13");
+            var first = db.First<string>("Name", "bello");
             var firstTime = stopWatch.ElapsedMilliseconds;
 
-            var all = db.Find<string>("Name", "bello13").ToList();
+            var all = db.Find<string>("Name", "bello").ToList();
             var allTime = stopWatch.ElapsedMilliseconds;
 
             // var dog2 = db.Find(Guid.Parse("8205585d-481d-4221-b995-230119a97337"));
@@ -102,7 +110,7 @@ namespace TestApp
             {
                 id = db.Insert(new Dog()
                 {
-                    Name = "bello13",// + i.ToString(),
+                    Name = "bello",// + i.ToString(),
                     Age = 7,
                     Barks = true
                 });

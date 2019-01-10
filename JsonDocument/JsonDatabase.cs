@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TinyBlockStorage.Core;
 using System.Reflection;
+using System.Text;
 
 namespace TinyBlockStorage.Json
 {
@@ -116,8 +117,8 @@ namespace TinyBlockStorage.Json
             if (String.IsNullOrWhiteSpace(propertyName))
                 throw new ArgumentNullException(nameof(propertyName));
 
-            if (propertyValue == null)
-                throw new ArgumentNullException(nameof(propertyValue));
+            // if (propertyValue == null)
+            //     throw new ArgumentNullException(nameof(propertyValue));
 
             if (disposed)
             {
@@ -126,7 +127,7 @@ namespace TinyBlockStorage.Json
 
             var byteValue = GetBytes<I>(propertyValue);
 
-            // Look in the primary index for this json
+            // Look in the secondary index for this json
             var entry = this.IndexOf(propertyName)?.Get(byteValue);
             if (entry == null)
             {
@@ -141,8 +142,8 @@ namespace TinyBlockStorage.Json
             if (String.IsNullOrWhiteSpace(propertyName))
                 throw new ArgumentNullException(nameof(propertyName));
 
-            if (propertyValue == null)
-                throw new ArgumentNullException(nameof(propertyValue));
+            // if (propertyValue == null)
+            //     throw new ArgumentNullException(nameof(propertyValue));
 
             if (disposed)
             {
@@ -193,16 +194,23 @@ namespace TinyBlockStorage.Json
         /// <summary>
         /// Delete specified json from our database
         /// </summary>
-        public void Delete(T obj)
+        public void Delete(Guid objId)
         {
-            if (obj == null)
-                throw new ArgumentNullException(nameof(obj));
-
             if (disposed)
             {
                 throw new ObjectDisposedException("JsonDatabase");
             }
 
+            var entry = this.Find(objId);
+
+            if (EqualityComparer<T>.Default.Equals(entry, default(T)))
+                return;
+
+            Delete(entry);
+        }
+
+        private void Delete(T obj)
+        {
             var entry = this.primaryIndex.Get(obj.Id);
 
             if (entry == null)
@@ -217,14 +225,15 @@ namespace TinyBlockStorage.Json
                 .GetProperties()
                 .ToList();
 
-            var indices = this.secondaryIndices
-                .Where(x => objProps.SingleOrDefault(p => p.Name.Equals(x.Key)) != null)
-                .ToList();
-
-            foreach (var idx in indices)
+            foreach (var idx in this.secondaryIndices)
             {
-                var secondaryId = GetBytes(idx.Key);
-                idx.Value.Delete(secondaryId, entry.Item2);
+                var objProp = objProps.SingleOrDefault(p => p.Name == idx.Key);
+                if (objProp != default(PropertyInfo))
+                {
+                    object value = objProp.GetValue(obj);
+                    byte[] byteValue = GetBytes(value, objProp.PropertyType);
+                    idx.Value.Delete(byteValue, entry.Item2);
+                }
             }
         }
 
@@ -247,7 +256,7 @@ namespace TinyBlockStorage.Json
             foreach (var idx in indices)
             {
                 var jsonProp = objProps
-                    .Where(p => p.Name.Equals(idx.Key))
+                    .Where(p => p.Name == idx.Key)
                     .SingleOrDefault();
 
                 if (jsonProp != default(PropertyInfo))
@@ -325,7 +334,7 @@ namespace TinyBlockStorage.Json
             if (valueType == typeof(uint)) return LittleEndianByteOrder.GetBytes((uint)value);
             if (valueType == typeof(float)) return LittleEndianByteOrder.GetBytes((float)value);
             if (valueType == typeof(double)) return LittleEndianByteOrder.GetBytes((double)value);
-            if (valueType == typeof(string)) return System.Text.Encoding.UTF8.GetBytes((string)value);
+            if (valueType == typeof(string)) return Encoding.UTF8.GetBytesWithNullRepresentation((string)value);
 
             throw new InvalidOperationException($"Unsupported Type {valueType} used as Index.");
         }
