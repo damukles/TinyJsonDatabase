@@ -2,9 +2,8 @@ using System;
 
 namespace TinyBlockStorage.Json
 {
-    public class JsonDocument
+    public interface IJsonDocument
     {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
+        Guid Id { get; set; }
     }
 }

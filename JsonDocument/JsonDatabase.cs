@@ -10,7 +10,7 @@ namespace TinyBlockStorage.Json
     /// <summary>
     /// Then, define our database
     /// </summary>
-    public class JsonDatabase<T> : IJsonDatabase<T>, IDisposable where T : JsonDocument, new()
+    public class JsonDatabase<T> : IJsonDatabase<T>, IDisposable where T : IJsonDocument, new()
     {
         private readonly string pathToJsonDb;
         readonly Stream mainDatabaseFile;
@@ -37,14 +37,13 @@ namespace TinyBlockStorage.Json
 
             this.pathToJsonDb = pathToJsonDb;
             this.mainDatabaseFileBlockSize = 4096;
-            // As soon as JsonDatabase is constructed, open the steam to talk to the underlying Jsons
+
             this.mainDatabaseFile = new FileStream(pathToJsonDb, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
 
             bool primaryIndexExists = File.Exists(pathToJsonDb + ".pidx");
             this.primaryIndexFile = new FileStream(pathToJsonDb + ".pidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             // this.secondaryIndexFile = new FileStream(pathToJsonDb + ".sidx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
 
-            // Construct the RecordStorage that use to store main json data
             this.jsonRecordStorage = new RecordStorage(new BlockStorage(this.mainDatabaseFile, mainDatabaseFileBlockSize, 48));
 
             // Construct the primary index
@@ -131,10 +130,10 @@ namespace TinyBlockStorage.Json
             var entry = this.IndexOf(propertyName)?.Get(byteValue);
             if (entry == null)
             {
-                return null;
+                return default(T);
             }
 
-            return this.jsonSerializer.Deserializer(this.jsonRecordStorage.Find(entry.Item2));
+            return this.jsonSerializer.Deserialize(this.jsonRecordStorage.Find(entry.Item2));
         }
 
         public IEnumerable<T> Find<I>(string propertyName, I propertyValue)
@@ -167,7 +166,7 @@ namespace TinyBlockStorage.Json
                 }
 
                 // Still in range, yield return
-                yield return this.jsonSerializer.Deserializer(this.jsonRecordStorage.Find(entry.Item2));
+                yield return this.jsonSerializer.Deserialize(this.jsonRecordStorage.Find(entry.Item2));
             }
         }
 
@@ -185,10 +184,10 @@ namespace TinyBlockStorage.Json
             var entry = this.primaryIndex.Get(objId);
             if (entry == null)
             {
-                return null;
+                return default(T);
             }
 
-            return this.jsonSerializer.Deserializer(this.jsonRecordStorage.Find(entry.Item2));
+            return this.jsonSerializer.Deserialize(this.jsonRecordStorage.Find(entry.Item2));
         }
 
         /// <summary>
@@ -295,7 +294,7 @@ namespace TinyBlockStorage.Json
                 var currentRecord = this.jsonRecordStorage.Find(curRecStart);
                 if (currentRecord != null)
                 {
-                    T obj = this.jsonSerializer.Deserializer(currentRecord);
+                    T obj = this.jsonSerializer.Deserialize(currentRecord);
 
                     // Primary index
                     if (rebuildPrimaryIndex) this.primaryIndex.Insert(obj.Id, curRecStart);
