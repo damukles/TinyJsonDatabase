@@ -254,7 +254,6 @@ namespace TinyBlockStorage.Json
             var indices = this.secondaryIndices;
             if (propertyNames != null)
             {
-                var propsHash = new HashSet<string>(propertyNames);
                 indices = this.secondaryIndices
                     .Where(x => propertyNames.Contains(x.Key))
                     .ToDictionary(k => k.Key, v => v.Value);
