@@ -328,10 +328,10 @@ namespace TinyBlockStorage.Json
             return value;
         }
 
-        private byte[] GetBytes<I>(I value)
-        {
-            return GetBytes((object)value, typeof(I));
-        }
+        // private byte[] GetBytes<I>(I value)
+        // {
+        //     return GetBytes((object)value, typeof(I));
+        // }
 
         private byte[] GetBytes(object value, Type valueType)
         {
