@@ -70,7 +70,7 @@ namespace TinyBlockStorage.JsonDatabase
         internal List<Tuple<string, bool>> SecondaryIndices;
     }
 
-    public class CollectionConfiguration<T> : CollectionConfiguration where T : new()
+    public class CollectionConfiguration<T> : CollectionConfiguration where T : IJsonDocument, new()
     {
 
         internal CollectionConfiguration(Type type)
