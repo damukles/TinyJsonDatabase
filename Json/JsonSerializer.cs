@@ -17,7 +17,7 @@ namespace TinyJsonDatabase.Json
             var bytes = Encoding.UTF8.GetBytes(json);
 
             var jsonData = new byte[
-                16 +                    // 16 bytes for Guid id°
+                // 16 +                    // 16 bytes for Guid id
                 4 +                     // 4 bytes indicate length of data
                 bytes.Length            // y bytes of data
             ];
