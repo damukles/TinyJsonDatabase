@@ -11,9 +11,7 @@ namespace TinyBlockStorage.Json
 {
     public abstract class JsonDocumentCollection : IDisposable
     {
-        public void Dispose()
-        {
-        }
+        public abstract void Dispose();
     }
 
     public class JsonDocumentCollection<T> : JsonDocumentCollection, IJsonDocumentCollection<T>, IDisposable where T : IJsonDocument, new()
@@ -346,11 +344,10 @@ namespace TinyBlockStorage.Json
         }
 
         #region Dispose
-        public new void Dispose()
+        public override void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
-            base.Dispose();
         }
 
         bool disposed = false;
