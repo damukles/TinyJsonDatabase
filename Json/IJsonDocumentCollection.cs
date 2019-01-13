@@ -8,7 +8,7 @@ namespace TinyJsonDatabase.Json
     {
         Guid Insert(T json);
         void Update(T json);
-        void Delete(Guid jsonId);
+        void Delete(Expression<Func<T, object>> propertySelector, object value);
         T First(Expression<Func<T, object>> propertySelector, object value);
         IEnumerable<T> Find(Expression<Func<T, object>> propertySelector, object value);
     }

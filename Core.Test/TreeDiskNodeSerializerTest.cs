@@ -12,7 +12,7 @@ public class TreeDiskNodeSerializerTest
     public void TestVariableLengthKeySize()
     {
         var nodeManager = new TreeDiskNodeManager<string, long>(
-            new TreeStringSerialzier(),
+            new TreeStringSerializer(),
             new TreeLongSerializer(),
             new RecordStorage(new BlockStorage(new MemoryStream(), 4096, 48))
         );
@@ -23,7 +23,7 @@ public class TreeDiskNodeSerializerTest
         }, new List<uint> {
             111, 222, 333, 444, 555
         });
-        var serializer = new TreeDiskNodeSerializer<string, long>(nodeManager, new TreeStringSerialzier(), new TreeLongSerializer());
+        var serializer = new TreeDiskNodeSerializer<string, long>(nodeManager, new TreeStringSerializer(), new TreeLongSerializer());
 
         var data = serializer.Serialize(node);
 

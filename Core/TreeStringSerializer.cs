@@ -2,7 +2,7 @@
 
 namespace TinyJsonDatabase.Core
 {
-    public class TreeStringSerialzier : ISerializer<string>
+    public class TreeStringSerializer : ISerializer<string>
     {
         public byte[] Serialize(string value)
         {
