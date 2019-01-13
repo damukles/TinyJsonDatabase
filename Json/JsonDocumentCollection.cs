@@ -60,7 +60,7 @@ namespace TinyJsonDatabase.Json
         }
 
         /// <summary>
-        /// Insert a new json entry into our json database
+        /// Insert a new json entry into json document collection
         /// </summary>
         public Guid Insert(T obj)
         {
@@ -84,6 +84,9 @@ namespace TinyJsonDatabase.Json
             }
         }
 
+        /// <summary>
+        /// Find the first matching json entry in the json document collection
+        /// </summary>
         public T First(Expression<Func<T, object>> propertySelector, object propertyValue)
         {
             if (disposed)
@@ -101,6 +104,9 @@ namespace TinyJsonDatabase.Json
             return this.jsonSerializer.Deserialize(document);
         }
 
+        /// <summary>
+        /// Find all matching json entries in the json document collection
+        /// </summary>
         public IEnumerable<T> Find(Expression<Func<T, object>> propertySelector, object propertyValue)
         {
             if (disposed)
@@ -112,6 +118,9 @@ namespace TinyJsonDatabase.Json
             return this.indexManager.Find(propertySelector, propertyValue, deserializer);
         }
 
+        /// <summary>
+        /// Delete first matching json entry in the json document collection
+        /// </summary>
         public void DeleteFirst(Expression<Func<T, object>> propertySelector, object propertyValue)
         {
             if (disposed)
@@ -132,6 +141,9 @@ namespace TinyJsonDatabase.Json
 
         }
 
+        /// <summary>
+        /// Find all matching json entries in the json document collection
+        /// </summary>
         public void Delete(Expression<Func<T, object>> propertySelector, object propertyValue)
         {
             if (disposed)
