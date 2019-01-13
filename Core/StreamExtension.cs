@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public static class StreamExtension
     {

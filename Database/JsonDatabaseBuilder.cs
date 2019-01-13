@@ -2,18 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using TinyBlockStorage.Json;
+using TinyJsonDatabase.Json;
 
 [assembly: TypeForwardedToAttribute(typeof(IJsonDocument))]
 
-namespace TinyBlockStorage.JsonDatabase
+namespace TinyJsonDatabase
 {
-    public class JsonDocumentDatabaseBuilder
+    public class JsonDatabaseBuilder
     {
         private List<CollectionConfiguration> collections { get; set; }
         private string dbPathPrefix { get; set; }
 
-        public JsonDocumentDatabaseBuilder()
+        public JsonDatabaseBuilder()
         {
             this.dbPathPrefix = "data";
             this.collections = new List<CollectionConfiguration>();
@@ -22,7 +22,7 @@ namespace TinyBlockStorage.JsonDatabase
         /// <summary>
         /// Add a collection to the Database configuration
         /// </summary>
-        public JsonDocumentDatabaseBuilder AddCollection<T>(Action<CollectionConfiguration<T>> configureAction = null) where T : IJsonDocument, new()
+        public JsonDatabaseBuilder AddCollection<T>(Action<CollectionConfiguration<T>> configureAction = null) where T : IJsonDocument, new()
         {
             var collection = new CollectionConfiguration<T>(typeof(T));
             if (configureAction != null)
@@ -36,7 +36,7 @@ namespace TinyBlockStorage.JsonDatabase
         /// Specify a file path prefix, e.g. C:\Temp\data
         /// This will result in files like: data.Type.db, data.Type.db.idx, etc.
         /// </summary>
-        public JsonDocumentDatabaseBuilder WithDatabasePath(string fullFilePrefixPath)
+        public JsonDatabaseBuilder WithDatabasePath(string fullFilePrefixPath)
         {
             this.dbPathPrefix = fullFilePrefixPath;
             return this;
@@ -45,7 +45,7 @@ namespace TinyBlockStorage.JsonDatabase
         /// <summary>
         /// Build and instantiate the Database
         /// </summary>
-        public JsonDocumentDatabase Build()
+        public JsonDatabase Build()
         {
             var collectionsDict = new Dictionary<Type, JsonDocumentCollection>();
 
@@ -59,7 +59,7 @@ namespace TinyBlockStorage.JsonDatabase
                 collectionsDict.Add(coll.Type, jsonDocumentCollection);
             }
 
-            return new JsonDocumentDatabase(collectionsDict);
+            return new JsonDatabase(collectionsDict);
         }
 
     }

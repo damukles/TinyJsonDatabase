@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public class TreeTraverser<K, V> : IEnumerable<Tuple<K, V>>
     {

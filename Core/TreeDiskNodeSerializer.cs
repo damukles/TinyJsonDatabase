@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public sealed class TreeDiskNodeSerializer<K, V>
     {

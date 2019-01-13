@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using TinyBlockStorage.Json;
+using TinyJsonDatabase.Json;
 
-namespace TinyBlockStorage.JsonDatabase
+namespace TinyJsonDatabase
 {
-    public class JsonDocumentDatabase : IDisposable
+    public class JsonDatabase : IDisposable
     {
         private readonly Dictionary<Type, JsonDocumentCollection> _collections;
 
-        public JsonDocumentDatabase(Dictionary<Type, JsonDocumentCollection> collections)
+        public JsonDatabase(Dictionary<Type, JsonDocumentCollection> collections)
         {
             _collections = collections;
         }
@@ -43,7 +43,7 @@ namespace TinyBlockStorage.JsonDatabase
             }
         }
 
-        ~JsonDocumentDatabase()
+        ~JsonDatabase()
         {
             Dispose(false);
         }

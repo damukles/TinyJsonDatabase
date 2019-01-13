@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 using Newtonsoft.Json;
-using TinyBlockStorage.Core;
+using TinyJsonDatabase.Core;
 
-namespace TinyBlockStorage.Json
+namespace TinyJsonDatabase.Json
 {
     /// <summary>
     /// This class serializes a JsonModel into byte[] for using with RecordStorage;

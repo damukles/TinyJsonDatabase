@@ -1,4 +1,4 @@
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public class IndexTree : Tree<byte[], uint>
     {

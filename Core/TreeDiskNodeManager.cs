@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public sealed class TreeDiskNodeManager<K, V> : ITreeNodeManager<K, V>
     {

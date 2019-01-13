@@ -1,7 +1,7 @@
 ﻿using System;
-using TinyBlockStorage.Core;
+using TinyJsonDatabase.Core;
 
-namespace TinyBlockStorage.Json
+namespace TinyJsonDatabase.Json
 {
     /// <summary>
     /// Just a thin wrapper around Guid.ToByteArray() to make it compatible with ISerializer[Guid]

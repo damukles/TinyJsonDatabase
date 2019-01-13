@@ -1,6 +1,6 @@
 using System;
 
-namespace TinyBlockStorage.Json
+namespace TinyJsonDatabase.Json
 {
     public interface IJsonDocument
     {

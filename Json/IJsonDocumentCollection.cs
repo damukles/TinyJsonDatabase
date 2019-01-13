@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace TinyBlockStorage.Json
+namespace TinyJsonDatabase.Json
 {
     public interface IJsonDocumentCollection<T>
     {

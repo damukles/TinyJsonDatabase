@@ -1,6 +1,6 @@
 ﻿using System;
-using TinyBlockStorage.Json;
-using TinyBlockStorage.JsonDatabase;
+using TinyJsonDatabase;
+using TinyJsonDatabase.Json;
 
 namespace JsonDatabaseTestApp
 {
@@ -8,7 +8,7 @@ namespace JsonDatabaseTestApp
     {
         static void Main(string[] args)
         {
-            var builder = new JsonDocumentDatabaseBuilder()
+            var builder = new JsonDatabaseBuilder()
                 .AddCollection<Person>(config =>
                 {
                     config.WithIndexOn(p => p.Name);

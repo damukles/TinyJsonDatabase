@@ -1,6 +1,6 @@
 using System;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public static class ByteArrayExtensions
     {

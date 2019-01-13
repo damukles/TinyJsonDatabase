@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     /// <summary>
     /// Wrapper around a Stream, for reading only.

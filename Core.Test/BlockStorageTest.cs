@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
-using TinyBlockStorage.Core;
+using TinyJsonDatabase.Core;
 
 namespace UnitTest
 {
