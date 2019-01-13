@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public class BlockStorage : IBlockStorage
     {

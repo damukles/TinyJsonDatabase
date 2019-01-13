@@ -2,7 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace TinyBlockStorage.Json
+namespace TinyJsonDatabase.Json
 {
     public static class ReflectionHelper
     {

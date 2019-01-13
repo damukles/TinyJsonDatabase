@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public class TreeNode<K, V>
     {

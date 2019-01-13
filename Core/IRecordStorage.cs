@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     /// <summary>
     /// While IBlockStorage allows client to see a Stream as individual equal length blocks,

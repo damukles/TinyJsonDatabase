@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public class TreeEnumerator<K, V> : IEnumerator<Tuple<K, V>>
     {

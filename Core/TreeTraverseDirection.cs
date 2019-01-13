@@ -1,4 +1,4 @@
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     public enum TreeTraverseDirection
     {

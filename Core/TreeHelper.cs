@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     static class TreeHelper
     {

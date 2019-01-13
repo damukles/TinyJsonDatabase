@@ -2,7 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 
-namespace TinyBlockStorage.Core
+namespace TinyJsonDatabase.Core
 {
     /// <summary>
     /// Record storage service that store data in form of records, each
