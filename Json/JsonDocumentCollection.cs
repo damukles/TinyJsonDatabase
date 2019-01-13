@@ -14,7 +14,7 @@ namespace TinyJsonDatabase.Json
         public abstract void Dispose();
     }
 
-    public class JsonDocumentCollection<T> : JsonDocumentCollection, IJsonDocumentCollection<T>, IDisposable where T : IJsonDocument, new()
+    public class JsonDocumentCollection<T> : JsonDocumentCollection, IJsonDocumentCollection<T>, IDisposable where T : new()
     {
         private readonly string pathToJsonDb;
         private readonly Stream databaseFile;
@@ -62,7 +62,7 @@ namespace TinyJsonDatabase.Json
         /// <summary>
         /// Insert a new json entry into json document collection
         /// </summary>
-        public Guid Insert(T obj)
+        public void Insert(T obj)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
@@ -75,12 +75,10 @@ namespace TinyJsonDatabase.Json
             lock (SyncRoot)
             {
                 // Serialize the json and insert it
-                var (bytes, id) = this.jsonSerializer.Serialize(obj);
+                var bytes = this.jsonSerializer.Serialize(obj);
                 var recordId = this.jsonDocumentStorage.Create(bytes);
 
                 this.indexManager.Insert(obj, recordId);
-
-                return id;
             }
         }
 

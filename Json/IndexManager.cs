@@ -127,14 +127,14 @@ namespace TinyJsonDatabase.Json
                 .GetProperties()
                 .ToList();
 
-            foreach (var idx in this.indexTrees)
+            foreach (var indexTree in this.indexTrees)
             {
-                var objProp = objProps.SingleOrDefault(p => p.Name == idx.Key);
+                var objProp = objProps.SingleOrDefault(p => p.Name == indexTree.Key);
                 if (objProp != default(PropertyInfo))
                 {
                     object value = objProp.GetValue(obj);
                     byte[] byteValue = ByteArrayHelper.GetBytes(value, objProp.PropertyType);
-                    idx.Value.Delete(byteValue); // TODO unique or not?: , entry.Item2
+                    indexTree.Value.Delete(byteValue); // TODO unique or not?: , entry.Item2
                 }
             }
         }
@@ -154,33 +154,18 @@ namespace TinyJsonDatabase.Json
             var dbFile = new FileStream(pathToJsonDb + "." + definition.PropertyName + ".idx", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096);
             this.indexFiles.Add(definition.PropertyName, dbFile);
 
-            IndexTree indexTree = (IndexTree)Activator
-                    .CreateInstance(typeof(Tree<,>).MakeGenericType(definition.PropertyType, typeof(uint)),
-                        new object[]
-                        {
-                            Activator.CreateInstance(typeof(TreeDiskNodeManager<,>)
-                                .MakeGenericType(new Type[] { definition.PropertyType, typeof(uint) }),
-                            new object[]
-                                {
-                                    GetTreeTypeSerializer(definition.PropertyType),
-                                    new TreeUIntSerializer(),
-                                    new RecordStorage(new BlockStorage(dbFile, 4096))
-                                })
-                        }, definition.AllowDuplicateKeys);
+            var indexTree = new IndexTree(
+                    new TreeDiskNodeManager<byte[], uint>(
+                        new TreeByteArraySerializer(),
+                        new TreeUIntSerializer(),
+                        new RecordStorage(new BlockStorage(dbFile, 4096)),
+                        ByteArrayComparer
+                    ),
+                    definition.AllowDuplicateKeys
+                );
+            this.indexTrees.Add(definition.PropertyName, indexTree);
 
             return new Tuple<string, bool>(definition.PropertyName, indexExists);
-        }
-
-        private object GetTreeTypeSerializer(Type propertyType)
-        {
-            if (propertyType == typeof(int)) return new TreeIntSerializer();
-            if (propertyType == typeof(long)) return new TreeLongSerializer();
-            if (propertyType == typeof(uint)) return new TreeUIntSerializer();
-            // if (propertyType == typeof(float)) return new TreeFloatSerializer();
-            // if (propertyType == typeof(double)) return new TreeDoubleSerializer();
-            if (propertyType == typeof(string)) return new TreeTraverseDirection(); ;
-
-            throw new InvalidOperationException($"Unsupported Type {propertyType} used as Index.");
         }
 
         #region Dispose

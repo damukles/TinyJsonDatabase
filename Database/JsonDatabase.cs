@@ -13,7 +13,7 @@ namespace TinyJsonDatabase
             _collections = collections;
         }
 
-        public IJsonDocumentCollection<T> GetCollection<T>() where T : IJsonDocument, new()
+        public IJsonDocumentCollection<T> GetCollection<T>() where T : new()
         {
             if (_collections.TryGetValue(typeof(T), out var collection))
             {

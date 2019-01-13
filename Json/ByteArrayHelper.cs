@@ -14,6 +14,7 @@ namespace TinyJsonDatabase.Json
             if (valueType == typeof(float)) return LittleEndianByteOrder.GetBytes((float)value);
             if (valueType == typeof(double)) return LittleEndianByteOrder.GetBytes((double)value);
             if (valueType == typeof(string)) return Encoding.UTF8.GetBytesWithNullRepresentation((string)value);
+            if (valueType == typeof(Guid)) return ((Guid)value).ToByteArray();
 
             throw new InvalidOperationException($"Unsupported Type {valueType}.");
         }

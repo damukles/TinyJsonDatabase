@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using TinyJsonDatabase.Json;
 
-[assembly: TypeForwardedToAttribute(typeof(IJsonDocument))]
+// [assembly: TypeForwardedToAttribute(typeof(IndexDefinition))]
 
 namespace TinyJsonDatabase
 {
@@ -22,7 +22,7 @@ namespace TinyJsonDatabase
         /// <summary>
         /// Add a collection to the Database configuration
         /// </summary>
-        public JsonDatabaseBuilder AddCollection<T>(Action<CollectionConfiguration<T>> configureAction = null) where T : IJsonDocument, new()
+        public JsonDatabaseBuilder AddCollection<T>(Action<CollectionConfiguration<T>> configureAction = null) where T : new()
         {
             var collection = new CollectionConfiguration<T>(typeof(T));
             if (configureAction != null)
@@ -67,16 +67,16 @@ namespace TinyJsonDatabase
     public abstract class CollectionConfiguration
     {
         internal Type Type { get; set; }
-        internal List<Tuple<string, bool>> SecondaryIndices;
+        internal List<IndexDefinition> SecondaryIndices;
     }
 
-    public class CollectionConfiguration<T> : CollectionConfiguration where T : IJsonDocument, new()
+    public class CollectionConfiguration<T> : CollectionConfiguration where T : new()
     {
 
         internal CollectionConfiguration(Type type)
         {
             this.Type = type;
-            this.SecondaryIndices = new List<Tuple<string, bool>>();
+            this.SecondaryIndices = new List<IndexDefinition>();
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace TinyJsonDatabase
             if (property == null)
                 throw new ArgumentOutOfRangeException(nameof(propertySelector) + ": Only properties are supported.");
 
-            this.SecondaryIndices.Add(new Tuple<string, bool>(property.Name, allowDuplicateKeys));
+            this.SecondaryIndices.Add(new IndexDefinition(property.Name, allowDuplicateKeys));
             return this;
         }
 
