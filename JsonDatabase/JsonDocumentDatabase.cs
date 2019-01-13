@@ -15,7 +15,11 @@ namespace TinyBlockStorage.JsonDatabase
 
         public IJsonDocumentCollection<T> GetCollection<T>() where T : IJsonDocument, new()
         {
-            return (IJsonDocumentCollection<T>)_collections[typeof(T)];
+            if (_collections.TryGetValue(typeof(T), out var collection))
+            {
+                return (IJsonDocumentCollection<T>)collection;
+            }
+            throw new ArgumentOutOfRangeException("Cannot find a collection for " + typeof(T).Name);
         }
 
         #region Dispose
