@@ -4,8 +4,6 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using TinyJsonDatabase.Json;
 
-// [assembly: TypeForwardedToAttribute(typeof(IndexDefinition))]
-
 namespace TinyJsonDatabase
 {
     public class JsonDatabaseBuilder
@@ -22,9 +20,11 @@ namespace TinyJsonDatabase
         /// <summary>
         /// Add a collection to the Database configuration
         /// </summary>
-        public JsonDatabaseBuilder AddCollection<T>(Action<CollectionConfiguration<T>> configureAction = null) where T : new()
+        public JsonDatabaseBuilder AddCollection<T>(Action<CollectionConfiguration<T>> configureAction = null) where T : IJsonDocument, new()
         {
             var collection = new CollectionConfiguration<T>(typeof(T));
+            collection.WithIndexOn(p => p.Id, false);
+
             if (configureAction != null)
                 configureAction(collection);
 
@@ -54,7 +54,7 @@ namespace TinyJsonDatabase
                 var dbPath = string.Join(".", new[] { this.dbPathPrefix, coll.Type.Name, "db" });
 
                 JsonDocumentCollection jsonDocumentCollection = (JsonDocumentCollection)Activator
-                    .CreateInstance(typeof(JsonDocumentCollection<>).MakeGenericType(coll.Type), new object[] { dbPath, coll.SecondaryIndices });
+                    .CreateInstance(typeof(JsonDocumentCollection<>).MakeGenericType(coll.Type), new object[] { dbPath, coll.Indices });
 
                 collectionsDict.Add(coll.Type, jsonDocumentCollection);
             }
@@ -67,16 +67,16 @@ namespace TinyJsonDatabase
     public abstract class CollectionConfiguration
     {
         internal Type Type { get; set; }
-        internal List<IndexDefinition> SecondaryIndices;
+        internal List<IndexDefinition> Indices;
     }
 
-    public class CollectionConfiguration<T> : CollectionConfiguration where T : new()
+    public class CollectionConfiguration<T> : CollectionConfiguration where T : IJsonDocument, new()
     {
 
         internal CollectionConfiguration(Type type)
         {
             this.Type = type;
-            this.SecondaryIndices = new List<IndexDefinition>();
+            this.Indices = new List<IndexDefinition>();
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace TinyJsonDatabase
             if (property == null)
                 throw new ArgumentOutOfRangeException(nameof(propertySelector) + ": Only properties are supported.");
 
-            this.SecondaryIndices.Add(new IndexDefinition(property.Name, allowDuplicateKeys));
+            this.Indices.Add(new IndexDefinition(property.Name, allowDuplicateKeys));
             return this;
         }
 

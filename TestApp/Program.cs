@@ -1,6 +1,5 @@
 ﻿using System;
 using TinyJsonDatabase;
-using TinyJsonDatabase.Json;
 
 namespace JsonDatabaseTestApp
 {
@@ -11,13 +10,9 @@ namespace JsonDatabaseTestApp
             var builder = new JsonDatabaseBuilder()
                 .AddCollection<Person>(config =>
                 {
-                    config.WithIndexOn(p => p.Id, false);
                     config.WithIndexOn(p => p.Name);
                 })
-                .AddCollection<Dog>(config =>
-                {
-                    config.WithIndexOn(p => p.Id);
-                });
+                .AddCollection<Dog>();
 
 
             using (var database = builder.Build())
@@ -43,12 +38,12 @@ namespace JsonDatabaseTestApp
         }
     }
 
-    public class Dog
+    public class Dog : IJsonDocument
     {
         public Guid Id { get; set; }
     }
 
-    public class Person
+    public class Person : IJsonDocument
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
