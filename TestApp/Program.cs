@@ -1,13 +1,19 @@
 ﻿using System;
+using System.IO;
 using TinyJsonDatabase;
 
 namespace JsonDatabaseTestApp
 {
     class Program
     {
+        private static readonly string UNIQUE_FILE_PREFIX = "data";
+
         static void Main(string[] args)
         {
+            var filePathPrefix = Path.Combine(Directory.GetCurrentDirectory(), UNIQUE_FILE_PREFIX);
+
             var builder = new JsonDatabaseBuilder()
+                .WithDatabasePath(filePathPrefix)
                 .AddCollection<Person>(config =>
                 {
                     config.WithIndexOn(p => p.Name);
@@ -66,6 +72,17 @@ namespace JsonDatabaseTestApp
                 var shouldBeEmpty = coll.Find(p => p.Name, "Daniel");
             }
 
+            TearDown();
+
+        }
+
+        private static void TearDown()
+        {
+            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), $"{UNIQUE_FILE_PREFIX}.*");
+            foreach (var file in files)
+            {
+                File.Delete(file);
+            }
         }
     }
 
