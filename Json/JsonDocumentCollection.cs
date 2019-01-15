@@ -98,8 +98,7 @@ namespace TinyJsonDatabase.Json
                 return default(T);
             }
 
-            var document = this.jsonDocumentStorage.Find(recordId.Value);
-            return this.jsonSerializer.Deserialize(document);
+            return Deserialize(recordId.Value);
         }
 
         /// <summary>
@@ -112,8 +111,7 @@ namespace TinyJsonDatabase.Json
                 throw new ObjectDisposedException("JsonDocumentCollection");
             }
 
-            Func<uint, T> deserializer = (recordId) => this.jsonSerializer.Deserialize(this.jsonDocumentStorage.Find(recordId));
-            return this.indexManager.Find(propertySelector, propertyValue, deserializer);
+            return this.indexManager.Find(propertySelector, propertyValue, Deserialize);
         }
 
         /// <summary>
@@ -133,10 +131,9 @@ namespace TinyJsonDatabase.Json
             }
 
             var obj = this.First(propertySelector, propertyValue);
-            this.indexManager.Delete(obj);
+            this.indexManager.Delete(obj, recordId.Value);
 
             this.jsonDocumentStorage.Delete(recordId.Value);
-
         }
 
         /// <summary>
@@ -149,15 +146,21 @@ namespace TinyJsonDatabase.Json
                 throw new ObjectDisposedException("JsonDocumentCollection");
             }
 
-            Func<uint, T> delete = (recordId) =>
-             {
-                 var jsonDocument = this.jsonSerializer.Deserialize(this.jsonDocumentStorage.Find(recordId));
-                 this.jsonDocumentStorage.Delete(recordId);
-                 this.indexManager.Delete(jsonDocument);
-                 return default(T);
-             };
+            var recordIdsToDelete = this.indexManager
+                .FindRecordIds(propertySelector, propertyValue)
+                .ToList();
 
-            var _ = this.indexManager.Find(propertySelector, propertyValue, delete);
+            foreach (var recordId in recordIdsToDelete)
+            {
+                var obj = Deserialize(recordId);
+                this.indexManager.Delete(obj, recordId);
+                this.jsonDocumentStorage.Delete(recordId);
+            }
+        }
+
+        private T Deserialize(uint recordId)
+        {
+            return this.jsonSerializer.Deserialize(this.jsonDocumentStorage.Find(recordId));
         }
 
         private void RebuildIndices(IEnumerable<string> propertyNames)

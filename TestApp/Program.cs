@@ -17,24 +17,55 @@ namespace JsonDatabaseTestApp
 
             using (var database = builder.Build())
             {
-                var pers = new Person()
+                var person1 = new Person()
                 {
                     Id = Guid.NewGuid(),
                     Name = "Daniel"
                 };
 
-                database
-                    .GetCollection<Person>()
-                    .Insert(pers);
+                var person2 = new Person()
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Stefan"
+                };
 
-                var person = database
-                    .GetCollection<Person>()
-                    .First(p => p.Name, "Daniel");
+                var person3 = new Person()
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Daniel"
+                };
 
-                database
-                    .GetCollection<Person>()
-                    .DeleteFirst(p => p.Id, pers.Id);
+                var person4 = new Person()
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Daniel"
+                };
+
+
+                var coll = database.GetCollection<Person>();
+
+                coll.Insert(person1);
+                coll.Insert(person2);
+                coll.Insert(person3);
+                coll.Insert(person4);
+
+                var firstDaniel = coll.First(p => p.Name, "Daniel");
+                var allDaniels = coll.Find(p => p.Name, "Daniel");
+
+                var firstStefan = coll.First(p => p.Name, "Stefan");
+                var allStefans = coll.Find(p => p.Name, "Stefan");
+
+
+                coll.DeleteFirst(p => p.Id, person1.Id);
+                coll.Delete(p => p.Name, "Daniel");
+
+                // coll.Delete(p => p.Id, person1.Id);
+                // coll.DeleteFirst(p => p.Name, "Daniel");
+                // coll.DeleteFirst(p => p.Name, "Daniel");
+
+                var shouldBeEmpty = coll.Find(p => p.Name, "Daniel");
             }
+
         }
     }
 

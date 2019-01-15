@@ -87,7 +87,7 @@ namespace TinyJsonDatabase.Core
         private class EndEnumeratingException : Exception { }
 
         /// <summary>
-        /// Delete all entries of given key
+        /// Delete entries of given key
         /// </summary>
         public bool Delete(K key)
         {

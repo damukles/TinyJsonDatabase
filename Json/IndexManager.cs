@@ -29,11 +29,6 @@ namespace TinyJsonDatabase.Json
 
         public void Insert(T obj, uint recordId, IEnumerable<string> propertyNames = null)
         {
-            var objProps = obj
-                    .GetType()
-                    .GetProperties()
-                    .ToList();
-
             var indexTrees = this.indexTrees;
             if (propertyNames != null)
             {
@@ -42,18 +37,23 @@ namespace TinyJsonDatabase.Json
                     .ToDictionary(k => k.Key, v => v.Value);
             }
 
-            foreach (var idx in indexTrees)
+            var objProperties = obj
+                .GetType()
+                .GetProperties()
+                .ToList();
+
+            foreach (var indexTree in indexTrees)
             {
-                var jsonProp = objProps
-                    .Where(p => p.Name == idx.Key)
+                var jsonProperty = objProperties
+                    .Where(prop => prop.Name == indexTree.Key)
                     .SingleOrDefault();
 
-                if (jsonProp != default(PropertyInfo))
+                if (jsonProperty != default(PropertyInfo))
                 {
-                    IndexTree indexToInsertInto = idx.Value;
-                    object value = jsonProp.GetValue(obj);
-                    byte[] byteValue = ByteArrayHelper.GetBytes(value, jsonProp.PropertyType);
-                    indexToInsertInto.Insert(byteValue, recordId);
+                    IndexTree indexForProperty = indexTree.Value;
+                    object value = jsonProperty.GetValue(obj);
+                    byte[] byteValue = ByteArrayHelper.GetBytes(value, jsonProperty.PropertyType);
+                    indexForProperty.Insert(byteValue, recordId);
                 }
             }
         }
@@ -74,7 +74,6 @@ namespace TinyJsonDatabase.Json
 
             var byteValue = ByteArrayHelper.GetBytes(propertyValue, property.PropertyType);
 
-            // Look in the secondary index for this json
             var entry = this.GetIndex(property.Name)?.Get(byteValue);
             if (entry == null)
             {
@@ -84,6 +83,14 @@ namespace TinyJsonDatabase.Json
         }
 
         public IEnumerable<T> Find(Expression<Func<T, object>> propertySelector, object propertyValue, Func<uint, T> deserializer)
+        {
+            foreach (var recordId in FindRecordIds(propertySelector, propertyValue))
+            {
+                yield return deserializer(recordId);
+            }
+        }
+
+        public IEnumerable<uint> FindRecordIds(Expression<Func<T, object>> propertySelector, object propertyValue)
         {
             if (disposed)
             {
@@ -113,28 +120,36 @@ namespace TinyJsonDatabase.Json
                 }
 
                 // Still in range, yield return
-                yield return deserializer(entry.Item2);
+                yield return entry.Item2;
             }
         }
 
-        public void Delete(T obj)
+        public void Delete(T obj, uint recordId)
         {
             if (obj == null)
                 return;
 
-            var objProps = obj
+            var objProperties = obj
                 .GetType()
                 .GetProperties()
                 .ToList();
 
             foreach (var indexTree in this.indexTrees)
             {
-                var objProp = objProps.SingleOrDefault(p => p.Name == indexTree.Key);
-                if (objProp != default(PropertyInfo))
+                var objProperty = objProperties.SingleOrDefault(prop => prop.Name == indexTree.Key);
+                if (objProperty != default(PropertyInfo))
                 {
-                    object value = objProp.GetValue(obj);
-                    byte[] byteValue = ByteArrayHelper.GetBytes(value, objProp.PropertyType);
-                    indexTree.Value.Delete(byteValue); // TODO unique or not?: , entry.Item2
+                    object value = objProperty.GetValue(obj);
+                    byte[] byteValue = ByteArrayHelper.GetBytes(value, objProperty.PropertyType);
+
+                    if (indexTree.Value.AllowDuplicateKeys)
+                    {
+                        indexTree.Value.Delete(byteValue, recordId);
+                    }
+                    else
+                    {
+                        indexTree.Value.Delete(byteValue);
+                    }
                 }
             }
         }
