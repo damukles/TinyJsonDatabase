@@ -146,14 +146,16 @@ namespace TinyJsonDatabase.Json
                 throw new ObjectDisposedException("JsonDocumentCollection");
             }
 
-            Func<uint, T> deleteFromIndex = (recordId) =>
+            var recordIdsToDelete = this.indexManager
+                .FindRecordIds(propertySelector, propertyValue)
+                .ToList();
+
+            foreach (var recordId in recordIdsToDelete)
             {
-                var jsonDocument = Deserialize(recordId);
-                this.indexManager.Delete(jsonDocument, recordId);
+                var obj = Deserialize(recordId);
+                this.indexManager.Delete(obj, recordId);
                 this.jsonDocumentStorage.Delete(recordId);
-                return default(T);
-            };
-            var _ = this.indexManager.Find(propertySelector, propertyValue, deleteFromIndex).ToList();
+            }
         }
 
         private T Deserialize(uint recordId)

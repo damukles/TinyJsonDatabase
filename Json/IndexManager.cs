@@ -84,6 +84,14 @@ namespace TinyJsonDatabase.Json
 
         public IEnumerable<T> Find(Expression<Func<T, object>> propertySelector, object propertyValue, Func<uint, T> deserializer)
         {
+            foreach (var recordId in FindRecordIds(propertySelector, propertyValue))
+            {
+                yield return deserializer(recordId);
+            }
+        }
+
+        public IEnumerable<uint> FindRecordIds(Expression<Func<T, object>> propertySelector, object propertyValue)
+        {
             if (disposed)
             {
                 throw new ObjectDisposedException("JsonDocumentCollection");
@@ -112,7 +120,7 @@ namespace TinyJsonDatabase.Json
                 }
 
                 // Still in range, yield return
-                yield return deserializer(entry.Item2);
+                yield return entry.Item2;
             }
         }
 
