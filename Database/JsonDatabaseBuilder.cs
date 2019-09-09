@@ -91,15 +91,5 @@ namespace TinyJsonDatabase
             this.Indices.Add(new IndexDefinition(property.Name, allowDuplicateKeys));
             return this;
         }
-
-        // UNSAFE
-        /// <summary>
-        /// Create a secondary index on a property
-        /// </summary>
-        // public CollectionConfiguration<T> WithIndexOn(string propertyName, bool allowDuplicateKeys = true)
-        // {
-        //     this.SecondaryIndices.Add(new Tuple<string, bool>(propertyName, allowDuplicateKeys));
-        //     return this;
-        // }
-    }
+W    }
 }

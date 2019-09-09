@@ -1,17 +1,17 @@
-# JsonDocumentDatabase
+# Tiny Json Database
 
 ## Collections
 
-- Mehrere Collections
-- Eine Collection pro Datentyp/-modell
+- Multiple collections
+- One collection per model/type
 
-## Sekundäre Indices
+## Secondary Indices
 
-- Werden manuell definiert (nur auf Properties)
-- Rebuild Index, wenn Datei fehlt
-- Fluent Api für Konfiguration
+- Will be defined manually
+- Index will be rebuilt, if file is missing
+- Fluent Api for configuration
 
-Unterstützte Datenformate für Sekundäre Indices
+Supported index types
 
 - string
 - int
@@ -23,4 +23,4 @@ Unterstützte Datenformate für Sekundäre Indices
 
 ## Credits
 
-Record- und Blockstorage forked von https://github.com/nam178/FooDB
+Record- und Blockstorage forked from https://github.com/nam178/FooDB
